@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config/game.config';
 import { getCharacter, type CharacterDef } from '../config/characters.config';
+import { getArena, type ArenaDef } from '../config/arenas.config';
 import {
   createFighterState,
   moveLeft,
@@ -63,9 +64,10 @@ export class FightScene extends Phaser.Scene {
     super({ key: 'FightScene' });
   }
 
-  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number }): void {
+  private arena!: ArenaDef;
+
+  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number; arenaId?: string }): void {
     this.matchOver = false;
-    this.cameras.main.setBackgroundColor('#1a3a5c');
 
     const playerCharId = data.playerCharId || 'tuna';
     const enemyCharId = data.enemyCharId || 'carp';
@@ -75,11 +77,21 @@ export class FightScene extends Phaser.Scene {
     const enemyWeaponId = data.enemyWeapon || 'pufferfish_cannon';
     const aiLevel = data.aiLevel || 3;
 
+    this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
 
-    // Floor
-    this.add.rectangle(GAME_WIDTH / 2, PHYSICS.floorY + 25, GAME_WIDTH, 50, 0x8B7355);
-    this.add.rectangle(GAME_WIDTH / 2, PHYSICS.floorY, GAME_WIDTH, 2, 0x44aaff);
+    // Render arena layers
+    this.cameras.main.setBackgroundColor(this.arena.bgColor);
+    for (const layer of this.arena.layers) {
+      this.add.rectangle(
+        GAME_WIDTH / 2, layer.y + layer.height / 2,
+        GAME_WIDTH, layer.height,
+        layer.color, layer.alpha ?? 1,
+      );
+    }
+
+    // Water shimmer line
+    this.add.rectangle(GAME_WIDTH / 2, this.arena.floorY - 5, GAME_WIDTH, 2, 0x44aaff, 0.5);
 
     this.graphics = this.add.graphics();
 
@@ -378,13 +390,14 @@ export class FightScene extends Phaser.Scene {
   }
 
   private checkMatchEnd(): void {
+    const ko = this.arena.koZones;
     const pKO = checkKO(
       this.player.movement.y, this.player.movement.x,
-      PHYSICS.arenaLeft - 50, PHYSICS.arenaRight + 50, PHYSICS.arenaTop
+      ko.left, ko.right, ko.top
     );
     const eKO = checkKO(
       this.enemy.movement.y, this.enemy.movement.x,
-      PHYSICS.arenaLeft - 50, PHYSICS.arenaRight + 50, PHYSICS.arenaTop
+      ko.left, ko.right, ko.top
     );
 
     if (pKO) this.endMatch('DEFEAT');
