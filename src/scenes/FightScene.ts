@@ -30,6 +30,14 @@ import {
   checkProjectileHit,
   type WeaponState,
 } from '../weapons/WeaponSystem';
+import {
+  createAIState,
+  decideAction,
+  updateAI,
+  AIAction,
+  type AIState,
+  type AIContext,
+} from '../systems/AISystem';
 
 interface Fighter {
   movement: FighterState;
@@ -42,6 +50,7 @@ interface Fighter {
 export class FightScene extends Phaser.Scene {
   private player!: Fighter;
   private enemy!: Fighter;
+  private aiState!: AIState;
   private graphics!: Phaser.GameObjects.Graphics;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -54,7 +63,7 @@ export class FightScene extends Phaser.Scene {
     super({ key: 'FightScene' });
   }
 
-  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string }): void {
+  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number }): void {
     this.matchOver = false;
     this.cameras.main.setBackgroundColor('#1a3a5c');
 
@@ -64,6 +73,9 @@ export class FightScene extends Phaser.Scene {
     const enemyDef = getCharacter(enemyCharId)!;
     const playerWeaponId = data.playerWeapon || 'toy_fish';
     const enemyWeaponId = data.enemyWeapon || 'pufferfish_cannon';
+    const aiLevel = data.aiLevel || 3;
+
+    this.aiState = createAIState(aiLevel);
 
     // Floor
     this.add.rectangle(GAME_WIDTH / 2, PHYSICS.floorY + 25, GAME_WIDTH, 50, 0x8B7355);
@@ -132,6 +144,7 @@ export class FightScene extends Phaser.Scene {
     const dt = delta / 1000;
 
     this.handleInput();
+    this.updateAIEnemy(dt);
     this.updateFighter(this.player, dt);
     this.updateFighter(this.enemy, dt);
     this.checkHits();
@@ -186,6 +199,91 @@ export class FightScene extends Phaser.Scene {
     }
   }
 
+  private updateAIEnemy(dt: number): void {
+    this.aiState = updateAI(this.aiState, dt);
+
+    // Only decide when cooldown is up
+    if (this.aiState.reactionCooldown > 0) return;
+
+    const e = this.enemy;
+    const p = this.player;
+    const dist = Math.abs(e.movement.x - p.movement.x);
+
+    const ctx: AIContext = {
+      aiX: e.movement.x,
+      aiY: e.movement.y,
+      playerX: p.movement.x,
+      playerY: p.movement.y,
+      aiHp: e.combat.hp,
+      playerHp: p.combat.hp,
+      playerIsAttacking: p.combat.isAttacking,
+      aiIsOnGround: e.movement.isOnGround,
+      distToPlayer: dist,
+    };
+
+    const action = decideAction(this.aiState, ctx);
+    this.aiState = {
+      ...this.aiState,
+      reactionCooldown: this.aiState.params.reactionTime / 1000,
+      lastAction: action,
+    };
+
+    // Face the player
+    e.movement.facingRight = p.movement.x > e.movement.x;
+
+    // Execute action
+    switch (action) {
+      case AIAction.MoveToward:
+        e.movement = p.movement.x < e.movement.x
+          ? moveLeft(e.movement) : moveRight(e.movement);
+        break;
+      case AIAction.MoveAway:
+        e.movement = p.movement.x < e.movement.x
+          ? moveRight(e.movement) : moveLeft(e.movement);
+        break;
+      case AIAction.Jump:
+        e.movement = jump(e.movement);
+        break;
+      case AIAction.LightAttack:
+        e.combat = startAttack(e.combat, AttackType.Light);
+        break;
+      case AIAction.HeavyAttack:
+        e.combat = startAttack(e.combat, AttackType.Heavy);
+        break;
+      case AIAction.WeaponAttack: {
+        const result = fireWeapon(e.weapon, e.movement.x, e.movement.y, e.movement.facingRight);
+        e.weapon = result.state;
+        if (result.meleeHit) {
+          if (dist <= result.meleeHit.rangeX) {
+            p.combat = applyDamage(p.combat, result.meleeHit.damage);
+            const dir = e.movement.x < p.movement.x ? 1 : -1;
+            p.movement.velocityX = result.meleeHit.knockback * dir * 3;
+            p.movement.velocityY = -result.meleeHit.knockback * 0.5;
+            p.movement.isOnGround = false;
+            p.sprite.setTint(0xff0000);
+            this.time.delayedCall(100, () => {
+              if (!p.combat.isBlocking && !p.combat.isAttacking) {
+                p.sprite.clearTint();
+              }
+            });
+          }
+        }
+        break;
+      }
+      case AIAction.Block:
+        e.combat = applyBlock(e.combat, true);
+        // Release block after a short time
+        this.time.delayedCall(300, () => {
+          e.combat = applyBlock(e.combat, false);
+        });
+        break;
+      case AIAction.Idle:
+      default:
+        e.movement = stopHorizontal(e.movement);
+        break;
+    }
+  }
+
   private updateFighter(fighter: Fighter, dt: number): void {
     fighter.movement = applyGravity(fighter.movement, dt);
     fighter.movement.x += fighter.movement.velocityX * dt;
@@ -217,6 +315,7 @@ export class FightScene extends Phaser.Scene {
 
   private checkHits(): void {
     this.resolveAttack(this.player, this.enemy);
+    this.resolveAttack(this.enemy, this.player);
     this.resolveProjectiles(this.player, this.enemy);
     this.resolveProjectiles(this.enemy, this.player);
   }
