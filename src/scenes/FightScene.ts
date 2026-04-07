@@ -60,6 +60,12 @@ import {
 import { getPet } from '../config/pets.config';
 import { getStoryState } from '../systems/StorySystem';
 import { getQuote, personalityFromSlider } from '../systems/PersonalitySystem';
+import {
+  createParasiteState,
+  shouldTransform,
+  updateParasite,
+  type ParasiteState,
+} from '../systems/ParasiteTransformSystem';
 import { getNewGamePlusScaling } from '../systems/NewGamePlusSystem';
 import {
   createEventState,
@@ -99,6 +105,9 @@ export class FightScene extends Phaser.Scene {
   private eventWarningText!: Phaser.GameObjects.Text;
   private lightningX = 0;
   private seagullTarget: 'player' | 'enemy' = 'player';
+  private parasiteState!: ParasiteState;
+  private dragonFishX = 0;
+  private dragonFishY = 0;
   private companionActive = false;
   private companionCooldown = 0;
   private companionX = 0;
@@ -128,6 +137,11 @@ export class FightScene extends Phaser.Scene {
     this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
     this.petState = createPetState(this.playerSave?.equippedPet ?? null);
+
+    // Parasite transform
+    this.parasiteState = createParasiteState(this.playerSave?.equippedSkin === 'parasite');
+    this.dragonFishX = 0;
+    this.dragonFishY = 0;
 
     // Random events
     this.eventState = createEventState();
@@ -264,6 +278,7 @@ export class FightScene extends Phaser.Scene {
     this.updatePet(dt);
     this.updateCompanion(dt);
     this.updateRandomEvents(dt);
+    this.updateParasite(dt);
     this.checkHits();
     this.checkMatchEnd();
     this.renderEffects();
@@ -777,6 +792,21 @@ export class FightScene extends Phaser.Scene {
     }
   }
 
+  private updateParasite(dt: number): void {
+    if (!this.parasiteState.active) return;
+
+    const trigger = shouldTransform(this.parasiteState, this.player.combat.hp, this.player.combat.maxHp);
+    this.parasiteState = updateParasite(this.parasiteState, dt, trigger);
+
+    // Dragon fish follows and attacks
+    if (this.parasiteState.dragonFishActive) {
+      const targetX = this.player.movement.x + (this.player.movement.facingRight ? 30 : -30);
+      const targetY = this.player.movement.y - 25;
+      this.dragonFishX += (targetX - this.dragonFishX) * 3 * dt;
+      this.dragonFishY += (targetY - this.dragonFishY) * 3 * dt;
+    }
+  }
+
   private updateCompanion(dt: number): void {
     if (!this.companionActive) return;
 
@@ -884,6 +914,50 @@ export class FightScene extends Phaser.Scene {
           proj.x + tailX * 2, proj.y,
         );
       }
+    }
+
+    // Parasite skin visuals
+    if (this.parasiteState.active && !this.parasiteState.transformed && !this.parasiteState.transforming) {
+      // Facehugger on player's face
+      const fx = this.player.movement.x + (this.player.movement.facingRight ? 8 : -8);
+      const fy = this.player.movement.y - 20;
+      this.graphics.fillStyle(0x220022, 1);
+      this.graphics.fillEllipse(fx, fy, 14, 10);
+      // Legs
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        this.graphics.lineStyle(1, 0x330033, 1);
+        this.graphics.lineBetween(fx, fy, fx + Math.cos(angle) * 10, fy + Math.sin(angle) * 8);
+      }
+    }
+    if (this.parasiteState.transforming) {
+      // Detaching animation — parasite shaking and falling off
+      const shake = Math.sin(Date.now() / 30) * 5;
+      const fallProgress = 1 - (this.parasiteState.transformTimer / 1.0);
+      const fx = this.player.movement.x + shake;
+      const fy = this.player.movement.y - 20 + fallProgress * 40;
+      this.graphics.fillStyle(0x220022, 0.8 - fallProgress * 0.5);
+      this.graphics.fillEllipse(fx, fy, 14 - fallProgress * 6, 10 - fallProgress * 4);
+    }
+    if (this.parasiteState.dragonFishActive) {
+      // Tiny black dragon fish
+      const dx = this.dragonFishX;
+      const dy = this.dragonFishY + Math.sin(Date.now() / 200) * 3;
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      // Body
+      this.graphics.fillStyle(0x111111, 1);
+      this.graphics.fillEllipse(dx, dy, 12, 7);
+      // Wings
+      this.graphics.fillStyle(0x333333, 1);
+      const wingFlap = Math.sin(Date.now() / 80) * 5;
+      this.graphics.fillTriangle(dx - 3, dy, dx - 10, dy - 8 + wingFlap, dx + 3, dy);
+      this.graphics.fillTriangle(dx - 3, dy, dx - 10, dy + 8 - wingFlap, dx + 3, dy);
+      // Eye (red)
+      this.graphics.fillStyle(0xff0000, 1);
+      this.graphics.fillCircle(dx + dir * 4, dy - 2, 1.5);
+      // Tail
+      this.graphics.lineStyle(1, 0x222222, 1);
+      this.graphics.lineBetween(dx - dir * 6, dy, dx - dir * 14, dy - 3);
     }
 
     // Random event visuals
