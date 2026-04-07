@@ -23,12 +23,20 @@ import {
   AttackType,
   type CombatState,
 } from '../systems/CombatSystem';
+import {
+  createWeaponState,
+  fireWeapon,
+  updateProjectiles,
+  checkProjectileHit,
+  type WeaponState,
+} from '../weapons/WeaponSystem';
 
 interface Fighter {
   movement: FighterState;
   combat: CombatState;
   charDef: CharacterDef;
   sprite: Phaser.GameObjects.Sprite;
+  weapon: WeaponState;
 }
 
 export class FightScene extends Phaser.Scene {
@@ -46,7 +54,7 @@ export class FightScene extends Phaser.Scene {
     super({ key: 'FightScene' });
   }
 
-  create(data: { playerCharId?: string; enemyCharId?: string }): void {
+  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string }): void {
     this.matchOver = false;
     this.cameras.main.setBackgroundColor('#1a3a5c');
 
@@ -54,6 +62,8 @@ export class FightScene extends Phaser.Scene {
     const enemyCharId = data.enemyCharId || 'carp';
     const playerDef = getCharacter(playerCharId)!;
     const enemyDef = getCharacter(enemyCharId)!;
+    const playerWeaponId = data.playerWeapon || 'toy_fish';
+    const enemyWeaponId = data.enemyWeapon || 'pufferfish_cannon';
 
     // Floor
     this.add.rectangle(GAME_WIDTH / 2, PHYSICS.floorY + 25, GAME_WIDTH, 50, 0x8B7355);
@@ -61,9 +71,9 @@ export class FightScene extends Phaser.Scene {
 
     this.graphics = this.add.graphics();
 
-    // Create fighters with sprites
-    this.player = this.createFighter(playerDef, 200, true);
-    this.enemy = this.createFighter(enemyDef, 600, false);
+    // Create fighters with sprites and weapons
+    this.player = this.createFighter(playerDef, 200, true, playerWeaponId);
+    this.enemy = this.createFighter(enemyDef, 600, false, enemyWeaponId);
 
     // Input
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -96,7 +106,7 @@ export class FightScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(10);
   }
 
-  private createFighter(charDef: CharacterDef, x: number, facingRight: boolean): Fighter {
+  private createFighter(charDef: CharacterDef, x: number, facingRight: boolean, weaponId: string): Fighter {
     const movement = {
       ...createFighterState(x, PHYSICS.floorY),
       isOnGround: true,
@@ -113,6 +123,7 @@ export class FightScene extends Phaser.Scene {
       combat: createCombatState(),
       charDef,
       sprite,
+      weapon: createWeaponState(weaponId),
     };
   }
 
@@ -152,7 +163,26 @@ export class FightScene extends Phaser.Scene {
     } else if (Phaser.Input.Keyboard.JustDown(this.keys.K)) {
       p.combat = startAttack(p.combat, AttackType.Heavy);
     } else if (Phaser.Input.Keyboard.JustDown(this.keys.L)) {
-      p.combat = startAttack(p.combat, AttackType.Special);
+      // Fire equipped weapon
+      const result = fireWeapon(p.weapon, p.movement.x, p.movement.y, p.movement.facingRight);
+      p.weapon = result.state;
+      if (result.meleeHit) {
+        // Melee weapon — check if enemy is in range and apply damage directly
+        const dist = Math.abs(p.movement.x - this.enemy.movement.x);
+        if (dist <= result.meleeHit.rangeX) {
+          this.enemy.combat = applyDamage(this.enemy.combat, result.meleeHit.damage);
+          const dir = p.movement.x < this.enemy.movement.x ? 1 : -1;
+          this.enemy.movement.velocityX = result.meleeHit.knockback * dir * 3;
+          this.enemy.movement.velocityY = -result.meleeHit.knockback * 0.5;
+          this.enemy.movement.isOnGround = false;
+          this.enemy.sprite.setTint(0xff0000);
+          this.time.delayedCall(100, () => {
+            if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+              this.enemy.sprite.clearTint();
+            }
+          });
+        }
+      }
     }
   }
 
@@ -162,6 +192,7 @@ export class FightScene extends Phaser.Scene {
     fighter.movement.y += fighter.movement.velocityY * dt;
     fighter.movement = applyFloorCollision(fighter.movement, PHYSICS.floorY);
     fighter.combat = updateAttack(fighter.combat, dt);
+    fighter.weapon = updateProjectiles(fighter.weapon, dt, GAME_WIDTH);
   }
 
   private syncSprites(): void {
@@ -186,6 +217,33 @@ export class FightScene extends Phaser.Scene {
 
   private checkHits(): void {
     this.resolveAttack(this.player, this.enemy);
+    this.resolveProjectiles(this.player, this.enemy);
+    this.resolveProjectiles(this.enemy, this.player);
+  }
+
+  private resolveProjectiles(attacker: Fighter, defender: Fighter): void {
+    const remaining: typeof attacker.weapon.projectiles = [];
+    for (const proj of attacker.weapon.projectiles) {
+      if (checkProjectileHit(proj, defender.movement.x, defender.movement.y - 16, 25)) {
+        // Hit!
+        const blocked = defender.combat.isBlocking;
+        const dmg = blocked ? proj.damage * 0.5 : proj.damage;
+        defender.combat = applyDamage(defender.combat, dmg);
+        const dir = proj.velocityX > 0 ? 1 : -1;
+        defender.movement.velocityX = proj.knockback * dir * 2;
+        defender.movement.velocityY = -proj.knockback * 0.3;
+        defender.movement.isOnGround = false;
+        defender.sprite.setTint(0xff0000);
+        this.time.delayedCall(100, () => {
+          if (!defender.combat.isBlocking && !defender.combat.isAttacking) {
+            defender.sprite.clearTint();
+          }
+        });
+      } else {
+        remaining.push(proj);
+      }
+    }
+    attacker.weapon = { ...attacker.weapon, projectiles: remaining };
   }
 
   private resolveAttack(attacker: Fighter, defender: Fighter): void {
@@ -262,6 +320,27 @@ export class FightScene extends Phaser.Scene {
       if (fighter.combat.isBlocking) {
         this.graphics.lineStyle(3, 0x44aaff, 0.7);
         this.graphics.strokeCircle(fighter.movement.x, fighter.movement.y - 16, 30);
+      }
+    }
+
+    // Projectiles
+    for (const fighter of [this.player, this.enemy]) {
+      for (const proj of fighter.weapon.projectiles) {
+        // Draw carrot projectile
+        this.graphics.fillStyle(0xff8800, 1);
+        this.graphics.fillTriangle(
+          proj.x + (proj.velocityX > 0 ? 8 : -8), proj.y,
+          proj.x + (proj.velocityX > 0 ? -4 : 4), proj.y - 3,
+          proj.x + (proj.velocityX > 0 ? -4 : 4), proj.y + 3,
+        );
+        // Carrot top (green)
+        this.graphics.fillStyle(0x44cc44, 1);
+        const tailX = proj.velocityX > 0 ? -4 : 4;
+        this.graphics.fillTriangle(
+          proj.x + tailX, proj.y - 4,
+          proj.x + tailX, proj.y + 4,
+          proj.x + tailX * 2, proj.y,
+        );
       }
     }
 
