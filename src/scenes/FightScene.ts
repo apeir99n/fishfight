@@ -59,6 +59,13 @@ import {
 } from '../systems/PetSystem';
 import { getPet } from '../config/pets.config';
 import { getStoryState } from '../systems/StorySystem';
+import {
+  createEventState,
+  rollForEvent,
+  updateEvent,
+  getActiveEvent,
+  type RandomEventState,
+} from '../systems/RandomEventSystem';
 
 interface Fighter {
   movement: FighterState;
@@ -85,6 +92,11 @@ export class FightScene extends Phaser.Scene {
   private playerSave: PlayerSave | null = null;
   private playerCharId = 'tuna';
   private petState!: PetState;
+  private eventState!: RandomEventState;
+  private eventRollTimer = 0;
+  private eventWarningText!: Phaser.GameObjects.Text;
+  private lightningX = 0;
+  private seagullTarget: 'player' | 'enemy' = 'player';
   private companionActive = false;
   private companionCooldown = 0;
   private companionX = 0;
@@ -114,6 +126,13 @@ export class FightScene extends Phaser.Scene {
     this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
     this.petState = createPetState(this.playerSave?.equippedPet ?? null);
+
+    // Random events
+    this.eventState = createEventState();
+    this.eventRollTimer = 10; // first possible event after 10 seconds
+    this.eventWarningText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, '', {
+      fontSize: '16px', color: '#ff4444', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(10);
 
     // Pufferfish companion from story arc
     const story = getStoryState(this.playerSave?.ladderClears ?? 0);
@@ -211,6 +230,7 @@ export class FightScene extends Phaser.Scene {
     this.updateFighter(this.enemy, dt);
     this.updatePet(dt);
     this.updateCompanion(dt);
+    this.updateRandomEvents(dt);
     this.checkHits();
     this.checkMatchEnd();
     this.renderEffects();
@@ -645,6 +665,77 @@ export class FightScene extends Phaser.Scene {
     });
   }
 
+  private updateRandomEvents(dt: number): void {
+    // Periodically roll for events
+    this.eventRollTimer -= dt;
+    if (this.eventRollTimer <= 0) {
+      this.eventState = rollForEvent(this.eventState);
+      this.eventRollTimer = 8 + Math.random() * 7; // next roll in 8-15s
+    }
+
+    // Update event timers
+    const prevEvent = this.eventState.activeEvent;
+    this.eventState = updateEvent(this.eventState, dt);
+
+    // Warning text
+    if (this.eventState.warningTimer > 0 && this.eventState.pendingEvent) {
+      const event = getActiveEvent({ ...this.eventState, activeEvent: this.eventState.pendingEvent });
+      this.eventWarningText.setText(event?.warning || 'WARNING!');
+      this.eventWarningText.setAlpha(0.5 + Math.sin(Date.now() / 100) * 0.5);
+    } else {
+      this.eventWarningText.setText('');
+    }
+
+    // Event just activated
+    if (this.eventState.activeEvent && !prevEvent) {
+      if (this.eventState.activeEvent === 'lightning') {
+        this.lightningX = 100 + Math.random() * (GAME_WIDTH - 200);
+      }
+      if (this.eventState.activeEvent === 'seagull') {
+        this.seagullTarget = Math.random() < 0.5 ? 'player' : 'enemy';
+      }
+    }
+
+    // Apply active event effects
+    const activeEvent = getActiveEvent(this.eventState);
+    if (!activeEvent) return;
+
+    switch (activeEvent.id) {
+      case 'lightning': {
+        // Damage fighters near the strike point
+        const pDist = Math.abs(this.player.movement.x - this.lightningX);
+        const eDist = Math.abs(this.enemy.movement.x - this.lightningX);
+        if (pDist < 60) {
+          this.player.combat = applyDamage(this.player.combat, activeEvent.damage! * dt * 2);
+          this.player.movement.velocityY = -200;
+          this.player.movement.isOnGround = false;
+        }
+        if (eDist < 60) {
+          this.enemy.combat = applyDamage(this.enemy.combat, activeEvent.damage! * dt * 2);
+          this.enemy.movement.velocityY = -200;
+          this.enemy.movement.isOnGround = false;
+        }
+        break;
+      }
+      case 'poison_rain': {
+        // Both fighters take damage over time
+        this.player.combat = applyDamage(this.player.combat, activeEvent.damage! * dt);
+        this.enemy.combat = applyDamage(this.enemy.combat, activeEvent.damage! * dt);
+        break;
+      }
+      case 'seagull': {
+        // Carry one fighter upward
+        const target = this.seagullTarget === 'player' ? this.player : this.enemy;
+        if (this.eventState.eventTimer > 1) {
+          target.movement.velocityY = -150;
+          target.movement.isOnGround = false;
+        }
+        break;
+      }
+      // super_weapon: visual only in this implementation (weapon spawn point rendered)
+    }
+  }
+
   private updateCompanion(dt: number): void {
     if (!this.companionActive) return;
 
@@ -752,6 +843,70 @@ export class FightScene extends Phaser.Scene {
           proj.x + tailX * 2, proj.y,
         );
       }
+    }
+
+    // Random event visuals
+    const activeEvent = getActiveEvent(this.eventState);
+    if (activeEvent) {
+      switch (activeEvent.id) {
+        case 'lightning': {
+          // Lightning bolt
+          this.graphics.lineStyle(4, 0xffff00, 0.9);
+          const lx = this.lightningX;
+          this.graphics.lineBetween(lx, 0, lx + 10, 80);
+          this.graphics.lineBetween(lx + 10, 80, lx - 5, 160);
+          this.graphics.lineBetween(lx - 5, 160, lx + 8, 300);
+          this.graphics.lineBetween(lx + 8, 300, lx, PHYSICS.floorY);
+          // Flash
+          this.graphics.fillStyle(0xffff00, 0.1 + Math.random() * 0.1);
+          this.graphics.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+          break;
+        }
+        case 'poison_rain': {
+          // Green rain drops
+          for (let i = 0; i < 20; i++) {
+            const rx = (Date.now() / 3 + i * 47) % GAME_WIDTH;
+            const ry = (Date.now() / 2 + i * 83) % GAME_HEIGHT;
+            this.graphics.fillStyle(0x44ff44, 0.5);
+            this.graphics.fillRect(rx, ry, 2, 8);
+          }
+          // Green tint overlay
+          this.graphics.fillStyle(0x00ff00, 0.05);
+          this.graphics.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+          break;
+        }
+        case 'seagull': {
+          // Draw seagull
+          const target = this.seagullTarget === 'player' ? this.player : this.enemy;
+          const sx = target.movement.x;
+          const sy = Math.min(target.movement.y - 40, 80);
+          this.graphics.fillStyle(0xffffff, 1);
+          this.graphics.fillEllipse(sx, sy, 30, 12);
+          // Wings flapping
+          const wingY = Math.sin(Date.now() / 100) * 8;
+          this.graphics.fillTriangle(sx - 15, sy, sx - 30, sy + wingY - 5, sx - 5, sy);
+          this.graphics.fillTriangle(sx + 15, sy, sx + 30, sy + wingY - 5, sx + 5, sy);
+          // Beak
+          this.graphics.fillStyle(0xff8800, 1);
+          this.graphics.fillTriangle(sx + 15, sy, sx + 22, sy + 2, sx + 15, sy + 4);
+          break;
+        }
+        case 'super_weapon': {
+          // Glowing weapon spawn point
+          const spawnX = GAME_WIDTH / 2;
+          const spawnY = PHYSICS.floorY - 30;
+          const glow = 0.5 + Math.sin(Date.now() / 200) * 0.3;
+          this.graphics.fillStyle(0xffcc00, glow);
+          this.graphics.fillStar(spawnX, spawnY, 5, 10, 20);
+          break;
+        }
+      }
+    }
+
+    // Warning flash
+    if (this.eventState.warningTimer > 0) {
+      this.graphics.lineStyle(3, 0xff4444, 0.3 + Math.sin(Date.now() / 80) * 0.3);
+      this.graphics.strokeRect(5, 5, GAME_WIDTH - 10, GAME_HEIGHT - 10);
     }
 
     // Pufferfish companion (story arc)
