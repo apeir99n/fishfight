@@ -32,8 +32,7 @@ export class MenuScene extends Phaser.Scene {
     startButton.on('pointerover', () => startButton.setColor('#ffcc00'));
     startButton.on('pointerout', () => startButton.setColor('#ffffff'));
     startButton.on('pointerdown', () => {
-      // TODO: transition to CharSelectScene
-      console.log('Start game!');
+      this.scene.start('FightScene');
     });
 
     // FPS counter (dev mode)
