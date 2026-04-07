@@ -74,6 +74,22 @@ const ENEMIES: EnemyDef[] = [
       { name: 'Body Slam', damage: 25, knockback: 140, speed: 0.9, range: 100, type: 'melee' },
     ],
   },
+  {
+    id: 'chef',
+    name: 'The Chef',
+    type: 'boss',
+    hp: 500,
+    color: 0xeeeeee,
+    scale: 5,
+    aiLevelBonus: 3,
+    attacks: [
+      { name: 'Knife Slash', damage: 16, knockback: 70, speed: 0.3, range: 65, type: 'melee' },
+      { name: 'Pan Smash', damage: 22, knockback: 120, speed: 0.7, range: 75, type: 'melee' },
+      { name: 'Pan Throw', damage: 15, knockback: 90, speed: 0.5, range: 220, type: 'ranged', projectileSpeed: 350 },
+      { name: 'Boiling Oil', damage: 12, knockback: 50, speed: 0.4, range: 180, type: 'ranged', projectileSpeed: 280 },
+      { name: 'Cleaver Slam', damage: 28, knockback: 150, speed: 0.9, range: 80, type: 'melee' },
+    ],
+  },
 ];
 
 export function getEnemy(id: string): EnemyDef | undefined {
@@ -88,7 +104,12 @@ export function getHumanEnemies(): EnemyDef[] {
   return ENEMIES.filter(e => e.type === 'human');
 }
 
-export function getBossPhase(currentHp: number, maxHp: number): number {
+export function getBossPhase(currentHp: number, maxHp: number, totalPhases: number = 2): number {
   const hpRatio = currentHp / maxHp;
+  if (totalPhases === 3) {
+    if (hpRatio > 0.6) return 1;
+    if (hpRatio > 0.3) return 2;
+    return 3;
+  }
   return hpRatio > 0.3 ? 1 : 2;
 }
