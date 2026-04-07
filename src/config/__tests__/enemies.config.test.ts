@@ -50,8 +50,43 @@ describe('Enemies Config', () => {
       expect(e!.attacks.length).toBeGreaterThanOrEqual(3);
     });
 
+    it('returns The Chef boss definition', () => {
+      const e = getEnemy('chef');
+      expect(e).toBeDefined();
+      expect(e!.id).toBe('chef');
+      expect(e!.name).toBe('The Chef');
+      expect(e!.type).toBe('boss');
+      expect(e!.hp).toBe(500);
+      expect(e!.scale).toBeGreaterThanOrEqual(5);
+      expect(e!.attacks.length).toBeGreaterThanOrEqual(5);
+    });
+
     it('returns undefined for unknown enemy', () => {
       expect(getEnemy('nonexistent')).toBeUndefined();
+    });
+  });
+
+  describe('The Chef attacks', () => {
+    it('has at least 5 unique attacks', () => {
+      const e = getEnemy('chef')!;
+      expect(e.attacks.length).toBeGreaterThanOrEqual(5);
+      const names = e.attacks.map(a => a.name);
+      expect(new Set(names).size).toBe(names.length);
+    });
+
+    it('has melee and ranged attacks', () => {
+      const e = getEnemy('chef')!;
+      const types = e.attacks.map(a => a.type);
+      expect(types).toContain('melee');
+      expect(types).toContain('ranged');
+    });
+
+    it('deals more damage than Mega-Fish', () => {
+      const chef = getEnemy('chef')!;
+      const mega = getEnemy('mega_fish')!;
+      const chefMax = Math.max(...chef.attacks.map(a => a.damage));
+      const megaMax = Math.max(...mega.attacks.map(a => a.damage));
+      expect(chefMax).toBeGreaterThan(megaMax);
     });
   });
 
@@ -80,24 +115,34 @@ describe('Enemies Config', () => {
   });
 
   describe('getBossPhase', () => {
-    it('phase 1 (normal) when HP > 30%', () => {
-      const phase = getBossPhase(200, 300);
+    it('phase 1 (normal) when HP > 60% for 2-phase boss', () => {
+      const phase = getBossPhase(200, 300, 2);
       expect(phase).toBe(1);
     });
 
-    it('phase 2 (enrage) when HP <= 30%', () => {
-      const phase = getBossPhase(90, 300);
+    it('phase 2 (enrage) when HP <= 30% for 2-phase boss', () => {
+      const phase = getBossPhase(90, 300, 2);
       expect(phase).toBe(2);
     });
 
-    it('phase 2 at exactly 30%', () => {
-      const phase = getBossPhase(90, 300);
+    it('phase 1 when HP > 60% for 3-phase boss', () => {
+      const phase = getBossPhase(350, 500, 3);
+      expect(phase).toBe(1);
+    });
+
+    it('phase 2 when HP 30-60% for 3-phase boss', () => {
+      const phase = getBossPhase(200, 500, 3);
       expect(phase).toBe(2);
     });
 
-    it('phase 2 at 0 HP', () => {
-      const phase = getBossPhase(0, 300);
-      expect(phase).toBe(2);
+    it('phase 3 when HP <= 30% for 3-phase boss', () => {
+      const phase = getBossPhase(100, 500, 3);
+      expect(phase).toBe(3);
+    });
+
+    it('defaults to 2-phase if totalPhases not specified', () => {
+      expect(getBossPhase(200, 300)).toBe(1);
+      expect(getBossPhase(80, 300)).toBe(2);
     });
   });
 
