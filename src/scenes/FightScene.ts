@@ -48,7 +48,16 @@ import {
   getCoinsForFight,
   type LadderState,
 } from '../systems/LadderSystem';
-import { addCoins, type PlayerSave } from '../systems/EconomySystem';
+import { addCoins, recordArenaPlayed, recordBossDefeated, type PlayerSave } from '../systems/EconomySystem';
+import {
+  createPetState,
+  applySpeedBoost,
+  applyFlight,
+  updateFlightTimer,
+  updateAutoShoot,
+  type PetState,
+} from '../systems/PetSystem';
+import { getPet } from '../config/pets.config';
 
 interface Fighter {
   movement: FighterState;
@@ -74,6 +83,7 @@ export class FightScene extends Phaser.Scene {
   private ladderState: LadderState | null = null;
   private playerSave: PlayerSave | null = null;
   private playerCharId = 'tuna';
+  private petState!: PetState;
 
   constructor() {
     super({ key: 'FightScene' });
@@ -98,6 +108,7 @@ export class FightScene extends Phaser.Scene {
 
     this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
+    this.petState = createPetState(this.playerSave?.equippedPet ?? null);
 
     // Render arena layers
     this.cameras.main.setBackgroundColor(this.arena.bgColor);
@@ -186,6 +197,7 @@ export class FightScene extends Phaser.Scene {
     this.updateAIEnemy(dt);
     this.updateFighter(this.player, dt);
     this.updateFighter(this.enemy, dt);
+    this.updatePet(dt);
     this.checkHits();
     this.checkMatchEnd();
     this.renderEffects();
@@ -569,6 +581,10 @@ export class FightScene extends Phaser.Scene {
         if (won) {
           const coins = getCoinsForFight(this.ladderState.currentFight);
           updatedSave = addCoins(updatedSave, coins);
+          updatedSave = recordArenaPlayed(updatedSave, this.arena.id);
+          if (this.enemy.enemyDef?.type === 'boss') {
+            updatedSave = recordBossDefeated(updatedSave, this.enemy.enemyDef.id);
+          }
         }
         this.scene.start('LadderScene', {
           ladderState: updatedLadder,
@@ -616,6 +632,45 @@ export class FightScene extends Phaser.Scene {
     });
   }
 
+  private updatePet(dt: number): void {
+    if (!this.petState.active) return;
+
+    // Speed boost — applied when moving
+    const pet = getPet(this.petState.petId!);
+    if (pet?.effect.type === 'speed_boost') {
+      const boosted = applySpeedBoost(this.petState, 200);
+      if (this.player.movement.velocityX !== 0) {
+        const dir = this.player.movement.velocityX > 0 ? 1 : -1;
+        this.player.movement.velocityX = dir * boosted;
+      }
+    }
+
+    // Flight — suppress gravity when jump held and flight available
+    if (pet?.effect.type === 'flight') {
+      const jumpHeld = this.cursors.up.isDown || this.keys.W.isDown;
+      const canFly = applyFlight(this.petState);
+      if (jumpHeld && canFly && !this.player.movement.isOnGround) {
+        this.player.movement.velocityY = Math.min(this.player.movement.velocityY, -100);
+      }
+      this.petState = updateFlightTimer(this.petState, dt, jumpHeld && canFly && !this.player.movement.isOnGround);
+    }
+
+    // Auto-shoot
+    if (pet?.effect.type === 'auto_shoot') {
+      const result = updateAutoShoot(this.petState, dt);
+      this.petState = result.state;
+      if (result.shouldFire) {
+        this.enemy.combat = applyDamage(this.enemy.combat, result.damage);
+        this.enemy.sprite.setTint(0xff8800);
+        this.time.delayedCall(100, () => {
+          if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+            this.enemy.sprite.clearTint();
+          }
+        });
+      }
+    }
+  }
+
   private renderEffects(): void {
     this.graphics.clear();
 
@@ -657,6 +712,21 @@ export class FightScene extends Phaser.Scene {
           proj.x + tailX, proj.y + 4,
           proj.x + tailX * 2, proj.y,
         );
+      }
+    }
+
+    // Pet companion
+    if (this.petState.active && this.petState.petId) {
+      const pet = getPet(this.petState.petId);
+      if (pet) {
+        const px = this.player.movement.x + (this.player.movement.facingRight ? -25 : 25);
+        const py = this.player.movement.y - 30 + Math.sin(Date.now() / 300) * 4;
+        this.graphics.fillStyle(pet.color, 1);
+        this.graphics.fillEllipse(px, py, 14, 8);
+        const tailDir = this.player.movement.facingRight ? -1 : 1;
+        this.graphics.fillTriangle(px + tailDir * 7, py, px + tailDir * 12, py - 4, px + tailDir * 12, py + 4);
+        this.graphics.fillStyle(0xffffff, 1);
+        this.graphics.fillCircle(px + (this.player.movement.facingRight ? 3 : -3), py - 1, 2);
       }
     }
 

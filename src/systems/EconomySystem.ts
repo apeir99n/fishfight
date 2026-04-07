@@ -4,6 +4,10 @@ export interface PlayerSave {
   equippedWeapon: string;
   purchasedCharacters: string[];
   ladderClears: number;
+  unlockedPets: string[];
+  equippedPet: string | null;
+  arenasPlayed: string[];
+  bossesDefeated: string[];
 }
 
 export function createPlayerSave(): PlayerSave {
@@ -13,6 +17,10 @@ export function createPlayerSave(): PlayerSave {
     equippedWeapon: 'toy_fish',
     purchasedCharacters: [],
     ladderClears: 0,
+    unlockedPets: [],
+    equippedPet: null,
+    arenasPlayed: [],
+    bossesDefeated: [],
   };
 }
 
@@ -47,4 +55,24 @@ export function purchaseWeapon(save: PlayerSave, weaponId: string, price: number
 export function equipWeapon(save: PlayerSave, weaponId: string): PlayerSave {
   if (!save.unlockedWeapons.includes(weaponId)) return save;
   return { ...save, equippedWeapon: weaponId };
+}
+
+export function unlockPet(save: PlayerSave, petId: string): PlayerSave {
+  if (save.unlockedPets.includes(petId)) return save;
+  return { ...save, unlockedPets: [...save.unlockedPets, petId] };
+}
+
+export function equipPet(save: PlayerSave, petId: string | null): PlayerSave {
+  if (petId !== null && !save.unlockedPets.includes(petId)) return save;
+  return { ...save, equippedPet: petId };
+}
+
+export function recordArenaPlayed(save: PlayerSave, arenaId: string): PlayerSave {
+  if (save.arenasPlayed.includes(arenaId)) return save;
+  return { ...save, arenasPlayed: [...save.arenasPlayed, arenaId] };
+}
+
+export function recordBossDefeated(save: PlayerSave, bossId: string): PlayerSave {
+  if (save.bossesDefeated.includes(bossId)) return save;
+  return { ...save, bossesDefeated: [...save.bossesDefeated, bossId] };
 }
