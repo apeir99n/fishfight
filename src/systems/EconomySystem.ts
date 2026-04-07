@@ -6,6 +6,8 @@ export interface PlayerSave {
   ladderClears: number;
   unlockedPets: string[];
   equippedPet: string | null;
+  unlockedSkins: string[];
+  equippedSkin: string | null;
   arenasPlayed: string[];
   bossesDefeated: string[];
 }
@@ -19,6 +21,8 @@ export function createPlayerSave(): PlayerSave {
     ladderClears: 0,
     unlockedPets: [],
     equippedPet: null,
+    unlockedSkins: [],
+    equippedSkin: null,
     arenasPlayed: [],
     bossesDefeated: [],
   };
@@ -65,6 +69,21 @@ export function unlockPet(save: PlayerSave, petId: string): PlayerSave {
 export function equipPet(save: PlayerSave, petId: string | null): PlayerSave {
   if (petId !== null && !save.unlockedPets.includes(petId)) return save;
   return { ...save, equippedPet: petId };
+}
+
+export function purchaseSkin(save: PlayerSave, skinId: string, price: number): PlayerSave {
+  if (save.unlockedSkins.includes(skinId)) return save;
+  if (!canAfford(save, price)) return save;
+  return {
+    ...save,
+    coins: save.coins - price,
+    unlockedSkins: [...save.unlockedSkins, skinId],
+  };
+}
+
+export function equipSkin(save: PlayerSave, skinId: string | null): PlayerSave {
+  if (skinId !== null && !save.unlockedSkins.includes(skinId)) return save;
+  return { ...save, equippedSkin: skinId };
 }
 
 export function recordArenaPlayed(save: PlayerSave, arenaId: string): PlayerSave {
