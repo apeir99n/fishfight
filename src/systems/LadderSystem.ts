@@ -1,5 +1,6 @@
 import { ECONOMY } from '../config/game.config';
 import { getArenaForFight } from '../config/arenas.config';
+import { getHumanEnemies } from '../config/enemies.config';
 
 export interface FightInfo {
   fightNumber: number;
@@ -7,6 +8,8 @@ export interface FightInfo {
   arenaId: string;
   isBoss: boolean;
   enemyCharId: string;
+  enemyType: 'fish' | 'human' | 'boss';
+  enemyId?: string; // enemy config id for human/boss enemies
 }
 
 export interface LadderState {
@@ -35,14 +38,36 @@ export function getCoinsForFight(fightNumber: number): number {
   return ECONOMY.baseCoinsPerFight + (fightNumber - 1) * ECONOMY.coinsIncrement;
 }
 
+// Human enemies appear in fights 7, 8, 9
+const HUMAN_FIGHT_MAP: Record<number, string> = {
+  7: 'fisherman',
+  8: 'diver',
+  9: 'sushi_master',
+};
+
 export function getNextFight(state: LadderState): FightInfo {
   const fightNum = state.currentFight;
+  const humanEnemy = HUMAN_FIGHT_MAP[fightNum];
+
+  if (humanEnemy) {
+    return {
+      fightNumber: fightNum,
+      aiLevel: fightNum,
+      arenaId: getArenaForFight(fightNum),
+      isBoss: false,
+      enemyCharId: 'carp', // fallback sprite for rendering
+      enemyType: 'human',
+      enemyId: humanEnemy,
+    };
+  }
+
   return {
     fightNumber: fightNum,
     aiLevel: fightNum,
     arenaId: getArenaForFight(fightNum),
     isBoss: fightNum === TOTAL_FIGHTS,
     enemyCharId: ENEMY_ROTATION[(fightNum - 1) % ENEMY_ROTATION.length],
+    enemyType: fightNum === TOTAL_FIGHTS ? 'boss' : 'fish',
   };
 }
 

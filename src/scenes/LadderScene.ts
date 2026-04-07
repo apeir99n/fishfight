@@ -42,7 +42,11 @@ export class LadderScene extends Phaser.Scene {
       const isDone = i < fight.fightNumber;
       const isBoss = i === 10;
 
-      const label = isBoss ? `Fight ${i} — BOSS` : `Fight ${i}`;
+      const isHuman = i >= 7 && i <= 9;
+      const humanNames: Record<number, string> = { 7: 'Fisherman', 8: 'Diver', 9: 'Sushi Master' };
+      const label = isBoss ? `Fight ${i} — BOSS`
+        : isHuman ? `Fight ${i} — ${humanNames[i]}`
+        : `Fight ${i}`;
       const color = isDone ? '#44aa44' : isCurrent ? '#ffcc00' : '#556677';
       const prefix = isDone ? '  ' : isCurrent ? '> ' : '  ';
 
@@ -83,6 +87,8 @@ export class LadderScene extends Phaser.Scene {
         arenaId: fight.arenaId,
         ladderState: this.ladderState,
         playerSave: this.playerSave,
+        enemyType: fight.enemyType,
+        enemyId: fight.enemyId,
       });
     });
 
@@ -112,6 +118,8 @@ export class LadderScene extends Phaser.Scene {
         arenaId: fight.arenaId,
         ladderState: this.ladderState,
         playerSave: this.playerSave,
+        enemyType: fight.enemyType,
+        enemyId: fight.enemyId,
       });
     });
   }

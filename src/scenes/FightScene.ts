@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config/game.config';
 import { getCharacter, type CharacterDef } from '../config/characters.config';
 import { getArena, type ArenaDef } from '../config/arenas.config';
+import { getEnemy, type EnemyDef } from '../config/enemies.config';
 import {
   createFighterState,
   moveLeft,
@@ -52,6 +53,8 @@ interface Fighter {
   charDef: CharacterDef;
   sprite: Phaser.GameObjects.Sprite;
   weapon: WeaponState;
+  enemyDef?: EnemyDef;       // set for human/boss enemies
+  humanGraphic?: Phaser.GameObjects.Graphics; // drawn for humans instead of sprite
 }
 
 export class FightScene extends Phaser.Scene {
@@ -75,7 +78,7 @@ export class FightScene extends Phaser.Scene {
 
   private arena!: ArenaDef;
 
-  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number; arenaId?: string; ladderState?: LadderState; playerSave?: PlayerSave }): void {
+  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number; arenaId?: string; ladderState?: LadderState; playerSave?: PlayerSave; enemyType?: string; enemyId?: string }): void {
     this.matchOver = false;
     this.ladderState = data.ladderState || null;
     this.playerSave = data.playerSave || null;
@@ -88,6 +91,7 @@ export class FightScene extends Phaser.Scene {
     const playerWeaponId = data.playerWeapon || 'toy_fish';
     const enemyWeaponId = data.enemyWeapon || 'pufferfish_cannon';
     const aiLevel = data.aiLevel || 3;
+    const humanEnemyDef = data.enemyId ? getEnemy(data.enemyId) : undefined;
 
     this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
@@ -110,6 +114,14 @@ export class FightScene extends Phaser.Scene {
     // Create fighters with sprites and weapons
     this.player = this.createFighter(playerDef, 200, true, playerWeaponId);
     this.enemy = this.createFighter(enemyDef, 600, false, enemyWeaponId);
+
+    // Override enemy stats for human enemies
+    if (humanEnemyDef) {
+      this.enemy.enemyDef = humanEnemyDef;
+      this.enemy.combat = { ...this.enemy.combat, hp: humanEnemyDef.hp, maxHp: humanEnemyDef.hp };
+      this.enemy.sprite.setVisible(false);
+      this.enemy.humanGraphic = this.add.graphics();
+    }
 
     // Input
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -324,10 +336,40 @@ export class FightScene extends Phaser.Scene {
 
   private syncFighterSprite(fighter: Fighter): void {
     const { x, y } = fighter.movement;
+
+    if (fighter.humanGraphic && fighter.enemyDef) {
+      // Draw human enemy as tall figure
+      const g = fighter.humanGraphic;
+      g.clear();
+      const dir = fighter.movement.facingRight ? 1 : -1;
+      const color = fighter.combat.isAttacking ? 0xffff00
+        : fighter.combat.isBlocking ? 0x8888ff
+        : fighter.enemyDef.color;
+
+      // Body (tall rectangle)
+      g.fillStyle(color, 1);
+      g.fillRect(x - 12, y - 60, 24, 55);
+      // Head
+      g.fillStyle(0xddaa88, 1);
+      g.fillCircle(x, y - 68, 10);
+      // Eyes
+      g.fillStyle(0x000000, 1);
+      g.fillCircle(x + dir * 4, y - 70, 2);
+      // Weapon arm
+      if (fighter.combat.isAttacking) {
+        g.lineStyle(3, 0xaaaaaa, 1);
+        g.lineBetween(x + dir * 12, y - 40, x + dir * 40, y - 50);
+      }
+      // Legs
+      g.fillStyle(color, 0.8);
+      g.fillRect(x - 8, y - 5, 7, 10);
+      g.fillRect(x + 1, y - 5, 7, 10);
+      return;
+    }
+
     fighter.sprite.setPosition(x, y - 16);
     fighter.sprite.setFlipX(!fighter.movement.facingRight);
 
-    // Tint effects
     if (fighter.combat.isAttacking) {
       fighter.sprite.setTint(0xffff00);
     } else if (fighter.combat.isBlocking) {
