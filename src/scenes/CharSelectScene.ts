@@ -6,6 +6,7 @@ import {
   type CharacterDef,
 } from '../config/characters.config';
 import { createPlayerSave, purchaseCharacter, type PlayerSave } from '../systems/EconomySystem';
+import { personalityFromSlider } from '../systems/PersonalitySystem';
 
 export class CharSelectScene extends Phaser.Scene {
   private characters!: CharacterDef[];
@@ -111,6 +112,35 @@ export class CharSelectScene extends Phaser.Scene {
     // Coins display
     this.add.text(20, 10, `Coins: ${this.playerSave.coins}`, {
       fontSize: '12px', color: '#ffcc00',
+    });
+
+    // Personality slider
+    const sliderX = GAME_WIDTH - 150;
+    const sliderY = 30;
+    this.add.text(sliderX, sliderY - 12, 'Personality', {
+      fontSize: '10px', color: '#88bbdd',
+    }).setOrigin(0.5);
+
+    const sliderBg = this.add.rectangle(sliderX, sliderY + 8, 100, 8, 0x333333);
+    const sliderHandle = this.add.rectangle(
+      sliderX - 50 + this.playerSave.personality * 100, sliderY + 8, 12, 16, 0xffcc00,
+    ).setInteractive({ draggable: true, useHandCursor: true });
+
+    const personalityLabel = this.add.text(sliderX, sliderY + 22, '', {
+      fontSize: '10px', color: '#ffcc00',
+    }).setOrigin(0.5);
+
+    const updateLabel = () => {
+      const level = personalityFromSlider(this.playerSave.personality);
+      personalityLabel.setText(level.toUpperCase());
+    };
+    updateLabel();
+
+    sliderHandle.on('drag', (_: unknown, dragX: number) => {
+      const clamped = Phaser.Math.Clamp(dragX, sliderX - 50, sliderX + 50);
+      sliderHandle.x = clamped;
+      this.playerSave = { ...this.playerSave, personality: (clamped - (sliderX - 50)) / 100 };
+      updateLabel();
     });
 
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 12, 'Arrow keys to select, Enter to fight', {

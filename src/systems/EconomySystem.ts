@@ -8,6 +8,7 @@ export interface PlayerSave {
   equippedPet: string | null;
   unlockedSkins: string[];
   equippedSkin: string | null;
+  personality: number;  // 0=kind, 0.5=neutral, 1=bold
   arenasPlayed: string[];
   bossesDefeated: string[];
 }
@@ -23,6 +24,7 @@ export function createPlayerSave(): PlayerSave {
     equippedPet: null,
     unlockedSkins: [],
     equippedSkin: null,
+    personality: 0.5,
     arenasPlayed: [],
     bossesDefeated: [],
   };

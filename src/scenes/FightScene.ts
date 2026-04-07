@@ -59,6 +59,8 @@ import {
 } from '../systems/PetSystem';
 import { getPet } from '../config/pets.config';
 import { getStoryState } from '../systems/StorySystem';
+import { getQuote, personalityFromSlider } from '../systems/PersonalitySystem';
+import { getNewGamePlusScaling } from '../systems/NewGamePlusSystem';
 import {
   createEventState,
   rollForEvent,
@@ -191,6 +193,37 @@ export class FightScene extends Phaser.Scene {
     this.enemyNameText = this.add.text(GAME_WIDTH - 20, 50, enemyDef.name, {
       fontSize: '12px', color: '#ffffff',
     }).setOrigin(1, 0);
+
+    // NG+ scaling
+    const ngCycle = Math.max(0, (this.playerSave?.ladderClears ?? 0) - 1);
+    if (ngCycle > 0) {
+      const scaling = getNewGamePlusScaling(ngCycle);
+      this.enemy.combat = {
+        ...this.enemy.combat,
+        hp: Math.round(this.enemy.combat.hp * scaling.hpMultiplier),
+        maxHp: Math.round(this.enemy.combat.maxHp * scaling.hpMultiplier),
+      };
+      this.aiState = {
+        ...this.aiState,
+        params: {
+          ...this.aiState.params,
+          reactionTime: Math.max(50, Math.round(this.aiState.params.reactionTime * scaling.reactionMultiplier)),
+        },
+      };
+      // Show cycle indicator
+      this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 30, `NG+ Cycle ${ngCycle}`, {
+        fontSize: '10px', color: '#ff8844',
+      }).setOrigin(0.5);
+    }
+
+    // Pre-fight personality quote
+    const personality = personalityFromSlider(this.playerSave?.personality ?? 0.5);
+    const preFightQuote = getQuote(personality, 'pre_fight');
+    const quoteBubble = this.add.text(this.player.movement.x, this.player.movement.y - 60, preFightQuote, {
+      fontSize: '11px', color: '#ffffff', backgroundColor: '#333333',
+      padding: { x: 6, y: 4 },
+    }).setOrigin(0.5).setDepth(10);
+    this.time.delayedCall(2500, () => quoteBubble.destroy());
 
     this.add.text(10, GAME_HEIGHT - 16, '', { fontSize: '11px', color: '#00ff00' }).setName('fpsText');
 
@@ -595,6 +628,14 @@ export class FightScene extends Phaser.Scene {
     const isChefFight = this.enemy.enemyDef?.id === 'chef';
 
     // Show result
+    // Post-fight personality quote
+    const postPersonality = personalityFromSlider(this.playerSave?.personality ?? 0.5);
+    const postQuote = getQuote(postPersonality, won ? 'victory' : 'defeat');
+    this.add.text(this.player.movement.x, this.player.movement.y - 50, postQuote, {
+      fontSize: '11px', color: '#ffffff', backgroundColor: '#333333',
+      padding: { x: 6, y: 4 },
+    }).setOrigin(0.5).setDepth(10);
+
     if (won && isChefFight) {
       this.resultText.setText('FREEDOM!');
       this.showLiberationScene();
