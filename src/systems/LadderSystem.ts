@@ -1,4 +1,5 @@
 import { ECONOMY } from '../config/game.config';
+import { getArenaForFight } from '../config/arenas.config';
 
 export interface FightInfo {
   fightNumber: number;
@@ -39,7 +40,7 @@ export function getNextFight(state: LadderState): FightInfo {
   return {
     fightNumber: fightNum,
     aiLevel: fightNum,
-    arenaId: 'sea',
+    arenaId: getArenaForFight(fightNum),
     isBoss: fightNum === TOTAL_FIGHTS,
     enemyCharId: ENEMY_ROTATION[(fightNum - 1) % ENEMY_ROTATION.length],
   };

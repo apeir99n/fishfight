@@ -46,7 +46,25 @@ describe('LadderSystem', () => {
       const fight = getNextFight(state);
       expect(fight.fightNumber).toBe(1);
       expect(fight.aiLevel).toBe(1);
-      expect(fight.arenaId).toBe('sea');
+      expect(fight.arenaId).toBe('sea'); // fights 1-3 are sea
+    });
+
+    it('fight 5 is at the Fish Market', () => {
+      let state = createLadderState();
+      state = { ...state, currentFight: 5 };
+      expect(getNextFight(state).arenaId).toBe('market');
+    });
+
+    it('fight 7 is on the Ship', () => {
+      let state = createLadderState();
+      state = { ...state, currentFight: 7 };
+      expect(getNextFight(state).arenaId).toBe('ship');
+    });
+
+    it('fight 9 is at the Restaurant', () => {
+      let state = createLadderState();
+      state = { ...state, currentFight: 9 };
+      expect(getNextFight(state).arenaId).toBe('restaurant');
     });
 
     it('AI level matches fight number', () => {
