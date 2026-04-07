@@ -11,6 +11,7 @@ export interface FighterState {
   velocityY: number;
   isOnGround: boolean;
   facingRight: boolean;
+  hitstunTimer: number;
 }
 
 export function createFighterState(x: number, y: number): FighterState {
@@ -21,23 +22,46 @@ export function createFighterState(x: number, y: number): FighterState {
     velocityY: 0,
     isOnGround: false,
     facingRight: true,
+    hitstunTimer: 0,
   };
 }
 
+export function isInHitstun(state: FighterState): boolean {
+  return state.hitstunTimer > 0;
+}
+
+export function applyHitstun(state: FighterState, vx: number, vy: number, duration: number): FighterState {
+  return {
+    ...state,
+    velocityX: vx,
+    velocityY: vy,
+    hitstunTimer: duration,
+    isOnGround: false,
+  };
+}
+
+export function updateHitstun(state: FighterState, dt: number): FighterState {
+  if (state.hitstunTimer <= 0) return state;
+  return { ...state, hitstunTimer: Math.max(0, state.hitstunTimer - dt) };
+}
+
 export function moveLeft(state: FighterState): FighterState {
+  if (isInHitstun(state)) return state;
   return { ...state, velocityX: -MOVE_SPEED, facingRight: false };
 }
 
 export function moveRight(state: FighterState): FighterState {
+  if (isInHitstun(state)) return state;
   return { ...state, velocityX: MOVE_SPEED, facingRight: true };
 }
 
 export function stopHorizontal(state: FighterState): FighterState {
+  if (isInHitstun(state)) return state;
   return { ...state, velocityX: 0 };
 }
 
 export function jump(state: FighterState): FighterState {
-  if (!state.isOnGround) return state;
+  if (!state.isOnGround || isInHitstun(state)) return state;
   return { ...state, velocityY: JUMP_VELOCITY, isOnGround: false };
 }
 
