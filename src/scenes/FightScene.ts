@@ -251,9 +251,9 @@ export class FightScene extends Phaser.Scene {
           ...this.aiState,
           params: {
             ...this.aiState.params,
-            reactionTime: Math.min(this.aiState.params.reactionTime, 120 - intensity * 60),
-            aggression: Math.max(this.aiState.params.aggression, 0.8 + intensity * 0.15),
-            attackFrequency: Math.max(this.aiState.params.attackFrequency, 0.8 + intensity * 0.15),
+            reactionTime: Math.min(this.aiState.params.reactionTime, 250 - intensity * 80),
+            aggression: Math.max(this.aiState.params.aggression, 0.6 + intensity * 0.15),
+            attackFrequency: Math.max(this.aiState.params.attackFrequency, 0.6 + intensity * 0.15),
           },
         };
       }

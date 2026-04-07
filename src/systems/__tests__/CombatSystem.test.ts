@@ -154,7 +154,7 @@ describe('CombatSystem', () => {
     it('reduces HP by damage amount', () => {
       const state = createCombatState();
       const result = applyDamage(state, 20);
-      expect(result.hp).toBe(80);
+      expect(result.hp).toBe(100); // 120 - 20
     });
 
     it('HP does not go below zero', () => {
