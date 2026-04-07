@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/game.config';
 import { getStarterCharacters, type CharacterDef } from '../config/characters.config';
+import { createPlayerSave } from '../systems/EconomySystem';
 
 export class CharSelectScene extends Phaser.Scene {
   private characters!: CharacterDef[];
@@ -67,9 +68,9 @@ export class CharSelectScene extends Phaser.Scene {
     fightBtn.on('pointerover', () => fightBtn.setColor('#ffcc00'));
     fightBtn.on('pointerout', () => fightBtn.setColor('#ff4444'));
     fightBtn.on('pointerdown', () => {
-      this.scene.start('FightScene', {
+      this.scene.start('LadderScene', {
         playerCharId: this.characters[this.selectedIndex].id,
-        enemyCharId: this.characters[this.selectedIndex === 0 ? 1 : 0].id,
+        playerSave: createPlayerSave(),
       });
     });
 
@@ -83,9 +84,9 @@ export class CharSelectScene extends Phaser.Scene {
       this.updateSelection();
     });
     this.input.keyboard!.on('keydown-ENTER', () => {
-      this.scene.start('FightScene', {
+      this.scene.start('LadderScene', {
         playerCharId: this.characters[this.selectedIndex].id,
-        enemyCharId: this.characters[this.selectedIndex === 0 ? 1 : 0].id,
+        playerSave: createPlayerSave(),
       });
     });
 

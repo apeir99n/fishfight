@@ -39,6 +39,12 @@ import {
   type AIState,
   type AIContext,
 } from '../systems/AISystem';
+import {
+  completeFight,
+  getCoinsForFight,
+  type LadderState,
+} from '../systems/LadderSystem';
+import { addCoins, type PlayerSave } from '../systems/EconomySystem';
 
 interface Fighter {
   movement: FighterState;
@@ -59,6 +65,9 @@ export class FightScene extends Phaser.Scene {
   private resultText!: Phaser.GameObjects.Text;
   private playerNameText!: Phaser.GameObjects.Text;
   private enemyNameText!: Phaser.GameObjects.Text;
+  private ladderState: LadderState | null = null;
+  private playerSave: PlayerSave | null = null;
+  private playerCharId = 'tuna';
 
   constructor() {
     super({ key: 'FightScene' });
@@ -66,10 +75,13 @@ export class FightScene extends Phaser.Scene {
 
   private arena!: ArenaDef;
 
-  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number; arenaId?: string }): void {
+  create(data: { playerCharId?: string; enemyCharId?: string; playerWeapon?: string; enemyWeapon?: string; aiLevel?: number; arenaId?: string; ladderState?: LadderState; playerSave?: PlayerSave }): void {
     this.matchOver = false;
+    this.ladderState = data.ladderState || null;
+    this.playerSave = data.playerSave || null;
+    this.playerCharId = data.playerCharId || 'tuna';
 
-    const playerCharId = data.playerCharId || 'tuna';
+    const playerCharId = this.playerCharId;
     const enemyCharId = data.enemyCharId || 'carp';
     const playerDef = getCharacter(playerCharId)!;
     const enemyDef = getCharacter(enemyCharId)!;
@@ -406,9 +418,33 @@ export class FightScene extends Phaser.Scene {
 
   private endMatch(text: string): void {
     this.matchOver = true;
-    this.resultText.setText(text);
+    const won = text === 'K.O.!';
+
+    // Show coins earned
+    if (won && this.ladderState) {
+      const coins = getCoinsForFight(this.ladderState.currentFight);
+      this.resultText.setText(`${text}\n+${coins} coins`);
+    } else {
+      this.resultText.setText(text);
+    }
+
     this.time.delayedCall(2000, () => {
-      this.scene.start('MenuScene');
+      if (this.ladderState && this.playerSave) {
+        // Update ladder and economy
+        const updatedLadder = completeFight(this.ladderState, won);
+        let updatedSave = this.playerSave;
+        if (won) {
+          const coins = getCoinsForFight(this.ladderState.currentFight);
+          updatedSave = addCoins(updatedSave, coins);
+        }
+        this.scene.start('LadderScene', {
+          ladderState: updatedLadder,
+          playerSave: updatedSave,
+          playerCharId: this.playerCharId,
+        });
+      } else {
+        this.scene.start('MenuScene');
+      }
     });
   }
 
