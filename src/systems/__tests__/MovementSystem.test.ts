@@ -6,6 +6,9 @@ import {
   jump,
   applyGravity,
   applyFloorCollision,
+  applyHitstun,
+  updateHitstun,
+  isInHitstun,
   type FighterState,
 } from '../MovementSystem';
 
@@ -96,6 +99,80 @@ describe('MovementSystem', () => {
       expect(result.y).toBe(300);
       expect(result.velocityY).toBe(50);
       expect(result.isOnGround).toBe(false);
+    });
+  });
+
+  describe('hitstun', () => {
+    it('applyHitstun sets hitstun timer and knockback velocity', () => {
+      let state = createFighterState(400, 400);
+      state.isOnGround = true;
+      state = applyHitstun(state, 300, -100, 0.3);
+      expect(state.hitstunTimer).toBeCloseTo(0.3);
+      expect(state.velocityX).toBe(300);
+      expect(state.velocityY).toBe(-100);
+      expect(state.isOnGround).toBe(false);
+    });
+
+    it('isInHitstun returns true during hitstun', () => {
+      let state = createFighterState(400, 400);
+      state = applyHitstun(state, 300, -100, 0.3);
+      expect(isInHitstun(state)).toBe(true);
+    });
+
+    it('isInHitstun returns false when no hitstun', () => {
+      const state = createFighterState(400, 400);
+      expect(isInHitstun(state)).toBe(false);
+    });
+
+    it('movement input is ignored during hitstun', () => {
+      let state = createFighterState(400, 400);
+      state = applyHitstun(state, 300, -100, 0.3);
+      const moved = moveLeft(state);
+      // velocityX should NOT change to move speed — hitstun overrides
+      expect(moved.velocityX).toBe(300);
+    });
+
+    it('jump is ignored during hitstun', () => {
+      let state = createFighterState(400, 400);
+      state.isOnGround = true;
+      state = applyHitstun(state, 300, -100, 0.3);
+      const jumped = jump(state);
+      expect(jumped.velocityY).toBe(-100); // unchanged
+    });
+
+    it('updateHitstun decrements timer', () => {
+      let state = createFighterState(400, 400);
+      state = applyHitstun(state, 300, -100, 0.3);
+      state = updateHitstun(state, 0.1);
+      expect(state.hitstunTimer).toBeCloseTo(0.2);
+      expect(isInHitstun(state)).toBe(true);
+    });
+
+    it('hitstun ends when timer reaches 0', () => {
+      let state = createFighterState(400, 400);
+      state = applyHitstun(state, 300, -100, 0.3);
+      state = updateHitstun(state, 0.5);
+      expect(state.hitstunTimer).toBe(0);
+      expect(isInHitstun(state)).toBe(false);
+    });
+
+    it('fighter carries momentum during hitstun and can exit arena', () => {
+      let state = createFighterState(750, 400);
+      state.isOnGround = true;
+      // Heavy knockback to the right
+      state = applyHitstun(state, 600, -80, 0.4);
+
+      // Simulate a few frames
+      const dt = 1 / 60;
+      for (let i = 0; i < 30; i++) {
+        state = updateHitstun(state, dt);
+        state = applyGravity(state, dt);
+        state.x += state.velocityX * dt;
+        state.y += state.velocityY * dt;
+      }
+
+      // Should have moved significantly past 800
+      expect(state.x).toBeGreaterThan(850);
     });
   });
 
