@@ -183,13 +183,27 @@
 
 ## In Progress
 
-_No tasks currently in progress._
+- [ ] **[2.3] Pet System** `MEDIUM` `4-5d`
+- [ ] **[2.7] Pufferfish Story Arc + Sakabambaspis** `HIGH` `3-4d`
 
 ---
 
 ## Done
 
-_No tasks completed yet._
+- [x] **[1.1] Project Setup & Infrastructure** `CRITICAL`
+- [x] **[1.2] Character Movement System** `CRITICAL`
+- [x] **[1.3] Combat System (4 Attacks + HP + Knockback)** `CRITICAL`
+- [x] **[1.4] AI Opponents (Basic)** `CRITICAL`
+- [x] **[1.5] Sea Arena (First Map)** `MEDIUM`
+- [x] **[1.6] Two Playable Characters (Tuna & Carp)** `CRITICAL`
+- [x] **[1.7] Two Starting Weapons** `MEDIUM`
+- [x] **[1.8] Basic UI & Arcade Ladder** `CRITICAL`
+- [x] **[2.1] Three New Arenas (Market, Ship, Restaurant)** `HIGH`
+- [x] **[2.2] Three New Characters (Squid, Pufferfish, Sakabambaspis)** `HIGH`
+- [x] **[2.4] Human Enemies (Fisherman, Diver, Sushi Master)** `HIGH`
+- [x] **[2.5] Mini-Boss: Mega-Fish** `HIGH`
+- [x] **[2.6] Final Boss: The Chef** `CRITICAL`
+- [x] **[4.3] Difficulty Rebalance** `CRITICAL` — player HP 120, softer AI, reduced boss damage
 
 ---
 
