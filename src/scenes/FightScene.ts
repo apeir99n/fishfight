@@ -238,17 +238,19 @@ export class FightScene extends Phaser.Scene {
   private updateAIEnemy(dt: number): void {
     this.aiState = updateAI(this.aiState, dt);
 
-    // Boss enrage: boost AI params when in phase 2
+    // Boss phase scaling
     if (this.enemy.enemyDef?.type === 'boss') {
-      const phase = getBossPhase(this.enemy.combat.hp, this.enemy.combat.maxHp);
-      if (phase === 2) {
+      const totalPhases = this.enemy.enemyDef.id === 'chef' ? 3 : 2;
+      const phase = getBossPhase(this.enemy.combat.hp, this.enemy.combat.maxHp, totalPhases);
+      if (phase >= 2) {
+        const intensity = phase === 3 ? 1.0 : 0.6;
         this.aiState = {
           ...this.aiState,
           params: {
             ...this.aiState.params,
-            reactionTime: Math.min(this.aiState.params.reactionTime, 80),
-            aggression: Math.max(this.aiState.params.aggression, 0.95),
-            attackFrequency: Math.max(this.aiState.params.attackFrequency, 0.95),
+            reactionTime: Math.min(this.aiState.params.reactionTime, 120 - intensity * 60),
+            aggression: Math.max(this.aiState.params.aggression, 0.8 + intensity * 0.15),
+            attackFrequency: Math.max(this.aiState.params.attackFrequency, 0.8 + intensity * 0.15),
           },
         };
       }
@@ -364,27 +366,59 @@ export class FightScene extends Phaser.Scene {
         : fighter.combat.isBlocking ? 0x8888ff
         : baseColor;
 
-      if (isBoss) {
+      if (isBoss && fighter.enemyDef!.id === 'chef') {
+        // Draw The Chef
+        const totalPhases = 3;
+        const phase = getBossPhase(fighter.combat.hp, fighter.combat.maxHp, totalPhases);
+        const phaseColor = phase === 3 ? 0xff2222 : phase === 2 ? 0xffaa00 : color;
+        const pulse = phase >= 2 ? Math.sin(Date.now() / (phase === 3 ? 80 : 120)) * 2 : 0;
+
+        // Legs
+        g.fillStyle(0x222222, 1);
+        g.fillRect(x - 8, y - 8, 7, 12);
+        g.fillRect(x + 1, y - 8, 7, 12);
+        // Body (apron)
+        g.fillStyle(phaseColor, 1);
+        g.fillRect(x - 14, y - 65 + pulse, 28, 60);
+        // Apron front
+        g.fillStyle(0xffffff, 0.8);
+        g.fillRect(x - 10, y - 50 + pulse, 20, 40);
+        // Head
+        g.fillStyle(0xddaa88, 1);
+        g.fillCircle(x, y - 73 + pulse, 11);
+        // Chef hat
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(x - 10, y - 95 + pulse, 20, 18);
+        g.fillRect(x - 14, y - 82 + pulse, 28, 6);
+        // Eyes (angrier per phase)
+        g.fillStyle(0x000000, 1);
+        g.fillCircle(x + dir * 4, y - 75 + pulse, phase >= 2 ? 3 : 2);
+        // Weapon arm
+        if (fighter.combat.isAttacking) {
+          g.lineStyle(3, 0xcccccc, 1);
+          g.lineBetween(x + dir * 14, y - 50 + pulse, x + dir * 45, y - 60 + pulse);
+          // Knife/pan at end
+          g.fillStyle(0xaaaaaa, 1);
+          g.fillRect(x + dir * 40, y - 66 + pulse, 10, 14);
+        }
+        // Phase glow
+        if (phase >= 2) {
+          const glowColor = phase === 3 ? 0xff0000 : 0xffaa00;
+          g.lineStyle(2, glowColor, 0.3 + Math.sin(Date.now() / 150) * 0.2);
+          g.strokeRect(x - 18, y - 98 + pulse, 36, 102);
+        }
+      } else if (isBoss) {
         // Draw Mega-Fish as giant fish
         const pulse = isEnraged ? Math.sin(Date.now() / 100) * 3 : 0;
-        // Body (large ellipse)
         g.fillStyle(color, 1);
         g.fillEllipse(x, y - 30 + pulse, 80, 40);
-        // Tail
-        g.fillTriangle(
-          x - dir * 40, y - 30,
-          x - dir * 60, y - 50,
-          x - dir * 60, y - 10,
-        );
-        // Dorsal fin
+        g.fillTriangle(x - dir * 40, y - 30, x - dir * 60, y - 50, x - dir * 60, y - 10);
         g.fillStyle(isEnraged ? 0xff4444 : 0x224466, 1);
         g.fillTriangle(x, y - 50 + pulse, x - 15, y - 30, x + 15, y - 30);
-        // Eye (angry)
         g.fillStyle(0xffffff, 1);
         g.fillCircle(x + dir * 25, y - 35, 6);
         g.fillStyle(isEnraged ? 0xff0000 : 0x000000, 1);
         g.fillCircle(x + dir * 26, y - 35, 3);
-        // Teeth
         g.fillStyle(0xffffff, 1);
         for (let t = 0; t < 4; t++) {
           g.fillTriangle(
@@ -393,7 +427,6 @@ export class FightScene extends Phaser.Scene {
             x + dir * (12 + t * 8), y - 16,
           );
         }
-        // Enrage glow
         if (isEnraged) {
           g.lineStyle(2, 0xff0000, 0.4 + Math.sin(Date.now() / 150) * 0.3);
           g.strokeEllipse(x, y - 30, 90, 50);
@@ -511,16 +544,21 @@ export class FightScene extends Phaser.Scene {
   private endMatch(text: string): void {
     this.matchOver = true;
     const won = text === 'K.O.!';
+    const isChefFight = this.enemy.enemyDef?.id === 'chef';
 
-    // Show coins earned
-    if (won && this.ladderState) {
+    // Show result
+    if (won && isChefFight) {
+      this.resultText.setText('FREEDOM!');
+      this.showLiberationScene();
+    } else if (won && this.ladderState) {
       const coins = getCoinsForFight(this.ladderState.currentFight);
       this.resultText.setText(`${text}\n+${coins} coins`);
     } else {
       this.resultText.setText(text);
     }
 
-    this.time.delayedCall(2000, () => {
+    const delay = won && isChefFight ? 4000 : 2000;
+    this.time.delayedCall(delay, () => {
       if (this.ladderState && this.playerSave) {
         // Update ladder and economy
         const updatedLadder = completeFight(this.ladderState, won);
@@ -537,6 +575,41 @@ export class FightScene extends Phaser.Scene {
       } else {
         this.scene.start('MenuScene');
       }
+    });
+  }
+
+  private showLiberationScene(): void {
+    // Fish flying free — simple animated fish rising from the bottom
+    const colors = [0x4488ff, 0xff8800, 0xff3333, 0x33cccc, 0xcc44ff];
+    for (let i = 0; i < 12; i++) {
+      const startX = 60 + Math.random() * (GAME_WIDTH - 120);
+      const startY = GAME_HEIGHT + 20 + Math.random() * 100;
+      const color = colors[i % colors.length];
+
+      const fish = this.add.graphics();
+      fish.fillStyle(color, 1);
+      fish.fillEllipse(0, 0, 20, 10);
+      fish.fillTriangle(-10, 0, -18, -6, -18, 6);
+      fish.fillStyle(0xffffff, 1);
+      fish.fillCircle(5, -2, 2);
+      fish.setPosition(startX, startY);
+      fish.setDepth(5);
+
+      this.tweens.add({
+        targets: fish,
+        y: -40,
+        x: startX + (Math.random() - 0.5) * 100,
+        duration: 2000 + Math.random() * 1500,
+        delay: i * 150,
+        ease: 'Sine.easeOut',
+      });
+    }
+
+    // "ALL FISH ARE FREE!" text after fish start flying
+    this.time.delayedCall(1000, () => {
+      this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 'ALL FISH ARE FREE!', {
+        fontSize: '18px', color: '#44ccff', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(10);
     });
   }
 

@@ -44,6 +44,7 @@ const SPECIAL_FIGHT_MAP: Record<number, { enemyId: string; type: 'human' | 'boss
   7: { enemyId: 'fisherman', type: 'human' },
   8: { enemyId: 'diver', type: 'human' },
   9: { enemyId: 'sushi_master', type: 'human' },
+  10: { enemyId: 'chef', type: 'boss' },
 };
 
 export function getNextFight(state: LadderState): FightInfo {
