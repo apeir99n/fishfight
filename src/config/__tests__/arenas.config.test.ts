@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getArena, getAllArenas, type ArenaDef } from '../arenas.config';
+import { getArena, getAllArenas, getArenaForFight, type ArenaDef } from '../arenas.config';
 
 describe('Arenas Config', () => {
   describe('getArena', () => {
@@ -16,19 +16,74 @@ describe('Arenas Config', () => {
       expect(arena!.koZones.top).toBeLessThan(0);
     });
 
+    it('returns Fish Market arena', () => {
+      const arena = getArena('market');
+      expect(arena).toBeDefined();
+      expect(arena!.id).toBe('market');
+      expect(arena!.name).toBe('Fish Market');
+      expect(arena!.layers.length).toBeGreaterThan(0);
+    });
+
+    it('returns Ship arena', () => {
+      const arena = getArena('ship');
+      expect(arena).toBeDefined();
+      expect(arena!.id).toBe('ship');
+      expect(arena!.name).toBe('Ship');
+      expect(arena!.layers.length).toBeGreaterThan(0);
+    });
+
+    it('returns Restaurant arena', () => {
+      const arena = getArena('restaurant');
+      expect(arena).toBeDefined();
+      expect(arena!.id).toBe('restaurant');
+      expect(arena!.name).toBe('Restaurant');
+      expect(arena!.layers.length).toBeGreaterThan(0);
+    });
+
+    it('all arenas have distinct background colors', () => {
+      const all = getAllArenas();
+      const colors = all.map(a => a.bgColor);
+      expect(new Set(colors).size).toBe(colors.length);
+    });
+
     it('returns undefined for unknown arena', () => {
       expect(getArena('nonexistent')).toBeUndefined();
     });
   });
 
   describe('getAllArenas', () => {
-    it('returns at least 1 arena', () => {
-      expect(getAllArenas().length).toBeGreaterThanOrEqual(1);
+    it('returns exactly 4 arenas', () => {
+      expect(getAllArenas().length).toBe(4);
     });
 
-    it('Sea arena has visual layers', () => {
-      const sea = getArena('sea')!;
-      expect(sea.layers.length).toBeGreaterThan(0);
+    it('each arena has visual layers', () => {
+      for (const arena of getAllArenas()) {
+        expect(arena.layers.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('getArenaForFight', () => {
+    it('fights 1-3 are on Sea', () => {
+      expect(getArenaForFight(1)).toBe('sea');
+      expect(getArenaForFight(2)).toBe('sea');
+      expect(getArenaForFight(3)).toBe('sea');
+    });
+
+    it('fights 4-5 are at Fish Market', () => {
+      expect(getArenaForFight(4)).toBe('market');
+      expect(getArenaForFight(5)).toBe('market');
+    });
+
+    it('fights 6-7 are on Ship', () => {
+      expect(getArenaForFight(6)).toBe('ship');
+      expect(getArenaForFight(7)).toBe('ship');
+    });
+
+    it('fights 8-10 are at Restaurant', () => {
+      expect(getArenaForFight(8)).toBe('restaurant');
+      expect(getArenaForFight(9)).toBe('restaurant');
+      expect(getArenaForFight(10)).toBe('restaurant');
     });
   });
 });
