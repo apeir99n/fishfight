@@ -7,6 +7,7 @@ import {
   type LadderState,
 } from '../systems/LadderSystem';
 import { type PlayerSave } from '../systems/EconomySystem';
+import { getStoryState, shouldPufferfishJoin, shouldPufferfishDepart } from '../systems/StorySystem';
 
 export class LadderScene extends Phaser.Scene {
   private ladderState!: LadderState;
@@ -143,7 +144,33 @@ export class LadderScene extends Phaser.Scene {
       fontSize: '14px', color: '#88bbdd',
     }).setOrigin(0.5);
 
-    const menuBtn = this.add.text(GAME_WIDTH / 2, 300, '[ MAIN MENU ]', {
+    // Story triggers
+    const clears = this.ladderState.ladderClears;
+    const story = getStoryState(clears);
+    if (shouldPufferfishJoin(clears)) {
+      this.add.text(GAME_WIDTH / 2, 270, 'Pufferfish joins your crew!', {
+        fontSize: '16px', color: '#33cccc', fontStyle: 'bold',
+      }).setOrigin(0.5);
+      this.add.text(GAME_WIDTH / 2, 290, 'A companion will fight alongside you.', {
+        fontSize: '12px', color: '#88cccc',
+      }).setOrigin(0.5);
+    } else if (shouldPufferfishDepart(clears)) {
+      this.add.text(GAME_WIDTH / 2, 260, 'Pufferfish says farewell...', {
+        fontSize: '16px', color: '#33cccc', fontStyle: 'bold',
+      }).setOrigin(0.5);
+      this.add.text(GAME_WIDTH / 2, 280, 'But a legendary fish appears!', {
+        fontSize: '14px', color: '#cc44ff',
+      }).setOrigin(0.5);
+      this.add.text(GAME_WIDTH / 2, 300, 'SAKABAMBASPIS UNLOCKED!', {
+        fontSize: '18px', color: '#cc44ff', fontStyle: 'bold',
+      }).setOrigin(0.5);
+    } else if (story.pufferfishCompanion) {
+      this.add.text(GAME_WIDTH / 2, 270, 'Pufferfish fights with you!', {
+        fontSize: '12px', color: '#33cccc',
+      }).setOrigin(0.5);
+    }
+
+    const menuBtn = this.add.text(GAME_WIDTH / 2, story.sakabambaspisUnlocked ? 340 : 320, '[ MAIN MENU ]', {
       fontSize: '20px', color: '#ff4444',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 

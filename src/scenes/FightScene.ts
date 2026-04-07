@@ -58,6 +58,7 @@ import {
   type PetState,
 } from '../systems/PetSystem';
 import { getPet } from '../config/pets.config';
+import { getStoryState } from '../systems/StorySystem';
 
 interface Fighter {
   movement: FighterState;
@@ -84,6 +85,10 @@ export class FightScene extends Phaser.Scene {
   private playerSave: PlayerSave | null = null;
   private playerCharId = 'tuna';
   private petState!: PetState;
+  private companionActive = false;
+  private companionCooldown = 0;
+  private companionX = 0;
+  private companionY = 0;
 
   constructor() {
     super({ key: 'FightScene' });
@@ -109,6 +114,13 @@ export class FightScene extends Phaser.Scene {
     this.arena = getArena(data.arenaId || 'sea')!;
     this.aiState = createAIState(aiLevel);
     this.petState = createPetState(this.playerSave?.equippedPet ?? null);
+
+    // Pufferfish companion from story arc
+    const story = getStoryState(this.playerSave?.ladderClears ?? 0);
+    this.companionActive = story.pufferfishCompanion;
+    this.companionCooldown = 3;
+    this.companionX = 100;
+    this.companionY = PHYSICS.floorY - 20;
 
     // Render arena layers
     this.cameras.main.setBackgroundColor(this.arena.bgColor);
@@ -198,6 +210,7 @@ export class FightScene extends Phaser.Scene {
     this.updateFighter(this.player, dt);
     this.updateFighter(this.enemy, dt);
     this.updatePet(dt);
+    this.updateCompanion(dt);
     this.checkHits();
     this.checkMatchEnd();
     this.renderEffects();
@@ -632,6 +645,32 @@ export class FightScene extends Phaser.Scene {
     });
   }
 
+  private updateCompanion(dt: number): void {
+    if (!this.companionActive) return;
+
+    // Follow player loosely
+    const targetX = this.player.movement.x + (this.player.movement.facingRight ? -40 : 40);
+    const targetY = this.player.movement.y - 20;
+    this.companionX += (targetX - this.companionX) * 2 * dt;
+    this.companionY += (targetY - this.companionY) * 2 * dt;
+
+    // Attack enemy periodically
+    this.companionCooldown -= dt;
+    if (this.companionCooldown <= 0) {
+      const dist = Math.abs(this.companionX - this.enemy.movement.x);
+      if (dist < 120) {
+        this.enemy.combat = applyDamage(this.enemy.combat, 3);
+        this.enemy.sprite.setTint(0x33cccc);
+        this.time.delayedCall(100, () => {
+          if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+            this.enemy.sprite.clearTint();
+          }
+        });
+      }
+      this.companionCooldown = 2.5;
+    }
+  }
+
   private updatePet(dt: number): void {
     if (!this.petState.active) return;
 
@@ -713,6 +752,29 @@ export class FightScene extends Phaser.Scene {
           proj.x + tailX * 2, proj.y,
         );
       }
+    }
+
+    // Pufferfish companion (story arc)
+    if (this.companionActive) {
+      const cx = this.companionX;
+      const cy = this.companionY + Math.sin(Date.now() / 250) * 3;
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      // Body
+      this.graphics.fillStyle(0x33cccc, 1);
+      this.graphics.fillCircle(cx, cy, 10);
+      // Spikes
+      this.graphics.fillStyle(0x44dddd, 1);
+      for (let a = 0; a < 6; a++) {
+        const angle = (a / 6) * Math.PI * 2 + Date.now() / 500;
+        const sx = cx + Math.cos(angle) * 12;
+        const sy = cy + Math.sin(angle) * 12;
+        this.graphics.fillCircle(sx, sy, 2);
+      }
+      // Eye
+      this.graphics.fillStyle(0xffffff, 1);
+      this.graphics.fillCircle(cx + dir * 4, cy - 3, 3);
+      this.graphics.fillStyle(0x000000, 1);
+      this.graphics.fillCircle(cx + dir * 5, cy - 3, 1.5);
     }
 
     // Pet companion
