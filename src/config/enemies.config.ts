@@ -59,6 +59,21 @@ const ENEMIES: EnemyDef[] = [
       { name: 'Cleaver Chop', damage: 20, knockback: 110, speed: 0.8, range: 70, type: 'melee' },
     ],
   },
+  {
+    id: 'mega_fish',
+    name: 'Mega-Fish',
+    type: 'boss',
+    hp: 300,
+    color: 0x336699,
+    scale: 5,
+    aiLevelBonus: 2,
+    attacks: [
+      { name: 'Tail Slam', damage: 18, knockback: 100, speed: 0.6, range: 90, type: 'melee' },
+      { name: 'Bite', damage: 22, knockback: 80, speed: 0.5, range: 60, type: 'melee' },
+      { name: 'Ink Spit', damage: 10, knockback: 60, speed: 0.4, range: 250, type: 'ranged', projectileSpeed: 350 },
+      { name: 'Body Slam', damage: 25, knockback: 140, speed: 0.9, range: 100, type: 'melee' },
+    ],
+  },
 ];
 
 export function getEnemy(id: string): EnemyDef | undefined {
@@ -71,4 +86,9 @@ export function getAllEnemies(): EnemyDef[] {
 
 export function getHumanEnemies(): EnemyDef[] {
   return ENEMIES.filter(e => e.type === 'human');
+}
+
+export function getBossPhase(currentHp: number, maxHp: number): number {
+  const hpRatio = currentHp / maxHp;
+  return hpRatio > 0.3 ? 1 : 2;
 }
