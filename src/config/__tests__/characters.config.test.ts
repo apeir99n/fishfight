@@ -3,6 +3,8 @@ import {
   getCharacter,
   getAllCharacters,
   getStarterCharacters,
+  getUnlockableCharacters,
+  isCharacterUnlocked,
   type CharacterDef,
 } from '../characters.config';
 
@@ -31,29 +33,49 @@ describe('Characters Config', () => {
       expect(carp!.color).toBe(0xff8800);
     });
 
-    it('Tuna and Carp have different colors', () => {
-      const tuna = getCharacter('tuna');
-      const carp = getCharacter('carp');
-      expect(tuna!.color).not.toBe(carp!.color);
+    it('returns Squid character definition', () => {
+      const squid = getCharacter('squid');
+      expect(squid).toBeDefined();
+      expect(squid!.id).toBe('squid');
+      expect(squid!.name).toBe('Squid');
+      expect(squid!.rarity).toBe('uncommon');
+      expect(squid!.spriteSheet).toBe('squid_sheet');
+      expect(squid!.frameCount).toBe(5);
+      expect(squid!.unlockCost).toBe(250);
+    });
+
+    it('returns Pufferfish character definition', () => {
+      const puffer = getCharacter('pufferfish');
+      expect(puffer).toBeDefined();
+      expect(puffer!.id).toBe('pufferfish');
+      expect(puffer!.name).toBe('Pufferfish');
+      expect(puffer!.rarity).toBe('rare');
+      expect(puffer!.unlockClear).toBe(5);
+    });
+
+    it('returns Sakabambaspis character definition', () => {
+      const saka = getCharacter('sakabambaspis');
+      expect(saka).toBeDefined();
+      expect(saka!.id).toBe('sakabambaspis');
+      expect(saka!.name).toBe('Sakabambaspis');
+      expect(saka!.rarity).toBe('legendary');
+      expect(saka!.unlockClear).toBe(10);
+    });
+
+    it('all 5 characters have different colors', () => {
+      const all = getAllCharacters();
+      const colors = all.map(c => c.color);
+      expect(new Set(colors).size).toBe(5);
     });
 
     it('returns undefined for unknown character', () => {
-      const unknown = getCharacter('nonexistent');
-      expect(unknown).toBeUndefined();
+      expect(getCharacter('nonexistent')).toBeUndefined();
     });
   });
 
   describe('getAllCharacters', () => {
-    it('returns at least 2 characters', () => {
-      const all = getAllCharacters();
-      expect(all.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('includes both Tuna and Carp', () => {
-      const all = getAllCharacters();
-      const ids = all.map(c => c.id);
-      expect(ids).toContain('tuna');
-      expect(ids).toContain('carp');
+    it('returns exactly 5 characters', () => {
+      expect(getAllCharacters().length).toBe(5);
     });
   });
 
@@ -61,13 +83,37 @@ describe('Characters Config', () => {
     it('returns only common rarity characters', () => {
       const starters = getStarterCharacters();
       expect(starters.every(c => c.rarity === 'common')).toBe(true);
+      expect(starters.length).toBe(2);
+    });
+  });
+
+  describe('getUnlockableCharacters', () => {
+    it('returns non-common characters', () => {
+      const unlockable = getUnlockableCharacters();
+      expect(unlockable.length).toBe(3);
+      expect(unlockable.every(c => c.rarity !== 'common')).toBe(true);
+    });
+  });
+
+  describe('isCharacterUnlocked', () => {
+    it('starters are always unlocked', () => {
+      expect(isCharacterUnlocked('tuna', 0, 0, [])).toBe(true);
+      expect(isCharacterUnlocked('carp', 0, 0, [])).toBe(true);
     });
 
-    it('includes Tuna and Carp', () => {
-      const starters = getStarterCharacters();
-      const ids = starters.map(c => c.id);
-      expect(ids).toContain('tuna');
-      expect(ids).toContain('carp');
+    it('squid unlocks when purchased', () => {
+      expect(isCharacterUnlocked('squid', 0, 0, [])).toBe(false);
+      expect(isCharacterUnlocked('squid', 0, 0, ['squid'])).toBe(true);
+    });
+
+    it('pufferfish unlocks at 5 clears', () => {
+      expect(isCharacterUnlocked('pufferfish', 4, 0, [])).toBe(false);
+      expect(isCharacterUnlocked('pufferfish', 5, 0, [])).toBe(true);
+    });
+
+    it('sakabambaspis unlocks at 10 clears', () => {
+      expect(isCharacterUnlocked('sakabambaspis', 9, 0, [])).toBe(false);
+      expect(isCharacterUnlocked('sakabambaspis', 10, 0, [])).toBe(true);
     });
   });
 });
