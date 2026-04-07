@@ -45,7 +45,7 @@ describe('Enemies Config', () => {
       expect(e!.id).toBe('mega_fish');
       expect(e!.name).toBe('Mega-Fish');
       expect(e!.type).toBe('boss');
-      expect(e!.hp).toBe(300); // 3x normal
+      expect(e!.hp).toBe(200); // 2x normal — balanced for fair fights
       expect(e!.scale).toBeGreaterThanOrEqual(5);
       expect(e!.attacks.length).toBeGreaterThanOrEqual(3);
     });
@@ -56,7 +56,7 @@ describe('Enemies Config', () => {
       expect(e!.id).toBe('chef');
       expect(e!.name).toBe('The Chef');
       expect(e!.type).toBe('boss');
-      expect(e!.hp).toBe(500);
+      expect(e!.hp).toBe(350);
       expect(e!.scale).toBeGreaterThanOrEqual(5);
       expect(e!.attacks.length).toBeGreaterThanOrEqual(5);
     });
@@ -175,6 +175,34 @@ describe('Enemies Config', () => {
           expect(atk.knockback).toBeGreaterThan(0);
           expect(atk.speed).toBeGreaterThan(0);
         }
+      }
+    });
+  });
+
+  describe('difficulty balance', () => {
+    it('boss max damage should not exceed 20% of player HP (120)', () => {
+      const megaFish = getEnemy('mega_fish')!;
+      const chef = getEnemy('chef')!;
+      // No single boss hit should deal more than 24 dmg (20% of 120 HP)
+      for (const atk of megaFish.attacks) {
+        expect(atk.damage).toBeLessThanOrEqual(24);
+      }
+      for (const atk of chef.attacks) {
+        expect(atk.damage).toBeLessThanOrEqual(24);
+      }
+    });
+
+    it('human enemy max damage should not exceed 15% of player HP (120)', () => {
+      for (const enemy of getHumanEnemies()) {
+        for (const atk of enemy.attacks) {
+          expect(atk.damage).toBeLessThanOrEqual(18);
+        }
+      }
+    });
+
+    it('AI level bonuses should be at most 1', () => {
+      for (const enemy of getAllEnemies()) {
+        expect(enemy.aiLevelBonus).toBeLessThanOrEqual(1);
       }
     });
   });

@@ -11,6 +11,9 @@ import {
   jump,
   applyGravity,
   applyFloorCollision,
+  applyHitstun,
+  updateHitstun,
+  isInHitstun,
   type FighterState,
 } from '../systems/MovementSystem';
 import {

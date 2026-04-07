@@ -11,20 +11,23 @@ import {
 
 describe('AISystem', () => {
   describe('getAIParams', () => {
-    it('returns params for level 1 (easy)', () => {
+    it('returns params for level 1 (easy — very passive)', () => {
       const p = getAIParams(1);
-      expect(p.reactionTime).toBeGreaterThanOrEqual(700);
-      expect(p.aggression).toBeLessThanOrEqual(0.3);
-      expect(p.blockChance).toBeLessThanOrEqual(0.1);
-      expect(p.attackFrequency).toBeLessThanOrEqual(0.4);
+      expect(p.reactionTime).toBeGreaterThanOrEqual(900);
+      expect(p.aggression).toBeLessThanOrEqual(0.2);
+      expect(p.blockChance).toBeLessThanOrEqual(0.05);
+      expect(p.attackFrequency).toBeLessThanOrEqual(0.25);
     });
 
-    it('returns params for level 10 (hard)', () => {
+    it('returns params for level 10 (hard but fair)', () => {
       const p = getAIParams(10);
-      expect(p.reactionTime).toBeLessThanOrEqual(150);
-      expect(p.aggression).toBeGreaterThanOrEqual(0.8);
-      expect(p.blockChance).toBeGreaterThanOrEqual(0.4);
-      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.8);
+      expect(p.reactionTime).toBeLessThanOrEqual(200);
+      expect(p.reactionTime).toBeGreaterThanOrEqual(150);
+      expect(p.aggression).toBeGreaterThanOrEqual(0.7);
+      expect(p.aggression).toBeLessThanOrEqual(0.8);
+      expect(p.blockChance).toBeGreaterThanOrEqual(0.3);
+      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.7);
+      expect(p.attackFrequency).toBeLessThanOrEqual(0.8);
     });
 
     it('level 5 is between level 1 and 10', () => {

@@ -16,8 +16,8 @@ describe('CombatSystem', () => {
   describe('createCombatState', () => {
     it('creates a combat state with full HP', () => {
       const state = createCombatState();
-      expect(state.hp).toBe(100);
-      expect(state.maxHp).toBe(100);
+      expect(state.hp).toBe(120);
+      expect(state.maxHp).toBe(120);
       expect(state.isAttacking).toBe(false);
       expect(state.isBlocking).toBe(false);
       expect(state.currentAttack).toBeNull();
@@ -117,10 +117,10 @@ describe('CombatSystem', () => {
       expect(dmg).toBe(10);
     });
 
-    it('blocking reduces damage by 50%', () => {
+    it('blocking reduces damage by 65%', () => {
       const normal = calculateDamage(AttackType.Heavy, false);
       const blocked = calculateDamage(AttackType.Heavy, true);
-      expect(blocked).toBe(normal * 0.5);
+      expect(blocked).toBe(normal * 0.35);
     });
   });
 
@@ -198,7 +198,7 @@ describe('CombatSystem', () => {
       // Attack hits — calculate damage and knockback
       const damage = calculateDamage(AttackType.Light, defender.isBlocking);
       defender = applyDamage(defender, damage);
-      expect(defender.hp).toBe(95);
+      expect(defender.hp).toBe(115); // 120 - 5
 
       const kb = calculateKnockback(AttackType.Light, defender.hp, defender.maxHp);
       expect(kb).toBeGreaterThan(50); // slightly more than base since HP < max
@@ -210,16 +210,16 @@ describe('CombatSystem', () => {
 
       const damage = calculateDamage(AttackType.Heavy, defender.isBlocking);
       defender = applyDamage(defender, damage);
-      expect(defender.hp).toBe(92.5); // 100 - 15*0.5
+      expect(defender.hp).toBe(114.75); // 120 - 15*0.35
     });
 
     it('low HP fighter gets knocked out of arena', () => {
       let defender = createCombatState();
       // Take lots of damage
-      defender = applyDamage(defender, 90);
-      expect(defender.hp).toBe(10);
+      defender = applyDamage(defender, 110);
+      expect(defender.hp).toBe(10); // 120 - 110
 
-      // At 10 HP, knockback for heavy = 120 * (1 + (100-10)/100) = 120 * 1.9 = 228
+      // At 10 HP, knockback for heavy = 120 * (1 + (120-10)/120) = 120 * 1.917 ≈ 230
       const kb = calculateKnockback(AttackType.Heavy, defender.hp, defender.maxHp);
       expect(kb).toBeGreaterThan(200);
     });
