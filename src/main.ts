@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { CharSelectScene } from './scenes/CharSelectScene';
 import { FightScene } from './scenes/FightScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/game.config';
 
@@ -17,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, MenuScene, FightScene],
+  scene: [BootScene, MenuScene, CharSelectScene, FightScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

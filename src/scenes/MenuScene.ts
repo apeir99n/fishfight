@@ -32,7 +32,7 @@ export class MenuScene extends Phaser.Scene {
     startButton.on('pointerover', () => startButton.setColor('#ffcc00'));
     startButton.on('pointerout', () => startButton.setColor('#ffffff'));
     startButton.on('pointerdown', () => {
-      this.scene.start('FightScene');
+      this.scene.start('CharSelectScene');
     });
 
     // FPS counter (dev mode)
