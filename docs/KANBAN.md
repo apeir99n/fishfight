@@ -183,8 +183,7 @@
 
 ## In Progress
 
-- [ ] **[2.3] Pet System** `MEDIUM` `4-5d`
-- [ ] **[2.7] Pufferfish Story Arc + Sakabambaspis** `HIGH` `3-4d`
+_No tasks currently in progress._
 
 ---
 
@@ -203,6 +202,12 @@
 - [x] **[2.4] Human Enemies (Fisherman, Diver, Sushi Master)** `HIGH`
 - [x] **[2.5] Mini-Boss: Mega-Fish** `HIGH`
 - [x] **[2.6] Final Boss: The Chef** `CRITICAL`
+- [x] **[2.3] Pet System** `MEDIUM` — 4 pets with unique effects and unlock conditions
+- [x] **[2.7] Pufferfish Story Arc + Sakabambaspis** `HIGH` — companion at clear 5, legendary at clear 10
+- [x] **[3.1] Full Shop (Weapons + Skins)** `HIGH` — two-tab shop, 6 skins, buy/equip
+- [x] **[3.3] Four Random Events** `HIGH` — lightning, poison rain, seagull, super weapon
+- [x] **[3.4] Personality Slider** `LOW` — kind/neutral/bold with 27 quotes
+- [x] **[3.5] New Game+ Difficulty Scaling** `LOW` — infinite exponential scaling
 - [x] **[4.3] Difficulty Rebalance** `CRITICAL` — player HP 120, softer AI, reduced boss damage
 
 ---
