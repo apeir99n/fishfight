@@ -1,0 +1,32 @@
+{
+  "name": "fishfight",
+  "version": "1.0.0",
+  "description": "> A 2D browser-based fighting game where fish battle on dry land.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apeir99n/fishfight.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/apeir99n/fishfight/issues"
+  },
+  "homepage": "https://github.com/apeir99n/fishfight#readme",
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "^8.0.5",
+    "vitest": "^4.1.2"
+  }
+}
