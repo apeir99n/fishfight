@@ -21,7 +21,7 @@ Fish Fight is a **2D browser-based fighting game** (Mortal Kombat / Rivals of Ae
 | **Game Engine** | Phaser 3.x | Mature 2D framework, huge community, built-in physics (Arcade), sprite/animation/particle systems, Web Audio. Zero install for players. |
 | **Language** | TypeScript | Type safety over vanilla JS — catches bugs at compile time, better IDE support, scales with codebase growth. |
 | **Bundler** | Vite | Fast HMR, native ESM, simple config. Phaser + Vite templates exist. |
-| **Art Style** | Pixel Art (128×128 base) | Matches existing sprites, small file sizes (<10MB total), easy to animate, strong visual identity. |
+| **Art Style** | Pixel Art (~32×32 base, Piskel) | Matches existing GIF sprites, ultra-small file sizes, fast to produce, strong comedic identity. |
 | **State Management** | Custom ECS-lite | Phaser scenes + lightweight entity/component pattern. No heavy ECS lib needed at this scale. |
 | **AI** | Behavior Tree (simple) | Configurable per-difficulty-level. Better than FSM for scaling complexity. Parameters: reaction_time, aggression, block_chance, attack_frequency. |
 | **Persistence** | localStorage | Coins, unlocks, settings. No backend needed for single-player. |
@@ -221,19 +221,34 @@ localStorage JSON blob. Structure:
 
 ## 7. Art Pipeline
 
-**Current assets:**
-- `design/sprites/`: Fish (tuna), Squid, Sakabambaspis — 128×128 static
-- `design/sprites-2/`: Pufferfish, elemental fish, dark fish — static + animated GIFs + Piskel sources
+**Art direction:** Small pixel art style (~32×32), created in Piskel. Simple, expressive, comedic. The 128×128 PNGs in `design/sprites/` are concept art / reference only — NOT used in-game.
 
-**Needed for MVP:**
-- Tuna & Carp spritesheets (idle 4f, walk 6f, jump 3f, light_attack 4f, heavy_attack 6f, special 6f, block 2f, hurt 3f, ko 4f)
-- Sea arena background (parallax optional)
+**Current game-ready assets (GIF style):**
+- `design/sprites-2/New Piskel.gif`, `New Piskel (1).gif` — Blue fish animations → **Tuna**
+- `design/sprites-2/New Piskel (2).gif`, `(3).gif`, `(3)(1).gif`, `(4).gif` — Red squid animations → **Squid**
+- Piskel source files available for editing
+
+**Reference art only (not for in-game use):**
+- `design/sprites/`: Fish, Squid, Sakabambaspis — 128×128 static PNGs
+- `design/sprites-2/`: Pufferfish, elemental fish, dark fish — detailed PNGs
+
+**Needed for MVP (in ~32×32 GIF/Piskel style):**
+- **Carp** spritesheet (MVP starter character — blocker)
+- Tuna & Carp full animation sets (idle 4f, walk 6f, jump 3f, light_attack 4f, heavy_attack 6f, special 6f, block 2f, hurt 3f, ko 4f)
+- Sea arena background
 - Toy Fish + Pufferfish Cannon weapon sprites
 - UI elements (HP bar, coin icon, menu buttons)
 
-**Tool:** Piskel (free, web-based, already in use) or Aseprite for spritesheets.
+**Needed for Phase 2+:**
+- Pufferfish, Sakabambaspis character sprites
+- Human enemies (Fisherman, Diver, Sushi Master, Chef)
+- 3 additional arena backgrounds
+- 4 pet sprites
+- 6 skin overlays
 
-**Format:** PNG spritesheets → Phaser texture atlas (JSON hash format).
+**Tool:** Piskel (free, web-based, already in use for existing GIFs).
+
+**Format:** PNG spritesheets exported from Piskel → Phaser texture atlas (JSON hash format).
 
 ---
 

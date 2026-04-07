@@ -195,8 +195,11 @@ _No tasks completed yet._
 
 ## Notes
 
+- **Solo dev** — one task at a time, strictly sequential within each phase
 - Tasks move left-to-right: **Backlog → In Progress → Done**
 - Each task has acceptance criteria inline
 - Priority labels: `CRITICAL` > `HIGH` > `MEDIUM` > `LOW`
 - Estimates are in working days (d)
-- Phase dependencies: 1 → 2 → 3 → 4 → 5 (sequential phases, parallel tasks within)
+- Phase dependencies: 1 → 2 → 3 → 4 → 5 (sequential)
+- **Recommended task order within Phase 1:** 1.1 → 1.2 → 1.3 → 1.6 → 1.7 → 1.4 → 1.5 → 1.8
+  - Build engine first, then combat, then characters/weapons (need combat to test), then AI (needs fighters), then arena + UI (wraps everything together)
