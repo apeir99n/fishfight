@@ -38,26 +38,27 @@ export function getCoinsForFight(fightNumber: number): number {
   return ECONOMY.baseCoinsPerFight + (fightNumber - 1) * ECONOMY.coinsIncrement;
 }
 
-// Human enemies appear in fights 7, 8, 9
-const HUMAN_FIGHT_MAP: Record<number, string> = {
-  7: 'fisherman',
-  8: 'diver',
-  9: 'sushi_master',
+// Special enemies by fight number
+const SPECIAL_FIGHT_MAP: Record<number, { enemyId: string; type: 'human' | 'boss' }> = {
+  6: { enemyId: 'mega_fish', type: 'boss' },
+  7: { enemyId: 'fisherman', type: 'human' },
+  8: { enemyId: 'diver', type: 'human' },
+  9: { enemyId: 'sushi_master', type: 'human' },
 };
 
 export function getNextFight(state: LadderState): FightInfo {
   const fightNum = state.currentFight;
-  const humanEnemy = HUMAN_FIGHT_MAP[fightNum];
+  const special = SPECIAL_FIGHT_MAP[fightNum];
 
-  if (humanEnemy) {
+  if (special) {
     return {
       fightNumber: fightNum,
       aiLevel: fightNum,
       arenaId: getArenaForFight(fightNum),
-      isBoss: false,
-      enemyCharId: 'carp', // fallback sprite for rendering
-      enemyType: 'human',
-      enemyId: humanEnemy,
+      isBoss: special.type === 'boss',
+      enemyCharId: 'carp',
+      enemyType: special.type,
+      enemyId: special.enemyId,
     };
   }
 

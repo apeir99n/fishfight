@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config/game.config';
 import { getCharacter, type CharacterDef } from '../config/characters.config';
 import { getArena, type ArenaDef } from '../config/arenas.config';
-import { getEnemy, type EnemyDef } from '../config/enemies.config';
+import { getEnemy, getBossPhase, type EnemyDef } from '../config/enemies.config';
 import {
   createFighterState,
   moveLeft,
@@ -238,6 +238,22 @@ export class FightScene extends Phaser.Scene {
   private updateAIEnemy(dt: number): void {
     this.aiState = updateAI(this.aiState, dt);
 
+    // Boss enrage: boost AI params when in phase 2
+    if (this.enemy.enemyDef?.type === 'boss') {
+      const phase = getBossPhase(this.enemy.combat.hp, this.enemy.combat.maxHp);
+      if (phase === 2) {
+        this.aiState = {
+          ...this.aiState,
+          params: {
+            ...this.aiState.params,
+            reactionTime: Math.min(this.aiState.params.reactionTime, 80),
+            aggression: Math.max(this.aiState.params.aggression, 0.95),
+            attackFrequency: Math.max(this.aiState.params.attackFrequency, 0.95),
+          },
+        };
+      }
+    }
+
     // Only decide when cooldown is up
     if (this.aiState.reactionCooldown > 0) return;
 
@@ -338,32 +354,66 @@ export class FightScene extends Phaser.Scene {
     const { x, y } = fighter.movement;
 
     if (fighter.humanGraphic && fighter.enemyDef) {
-      // Draw human enemy as tall figure
       const g = fighter.humanGraphic;
       g.clear();
       const dir = fighter.movement.facingRight ? 1 : -1;
+      const isBoss = fighter.enemyDef.type === 'boss';
+      const isEnraged = isBoss && getBossPhase(fighter.combat.hp, fighter.combat.maxHp) === 2;
+      const baseColor = isEnraged ? 0xff2222 : fighter.enemyDef.color;
       const color = fighter.combat.isAttacking ? 0xffff00
         : fighter.combat.isBlocking ? 0x8888ff
-        : fighter.enemyDef.color;
+        : baseColor;
 
-      // Body (tall rectangle)
-      g.fillStyle(color, 1);
-      g.fillRect(x - 12, y - 60, 24, 55);
-      // Head
-      g.fillStyle(0xddaa88, 1);
-      g.fillCircle(x, y - 68, 10);
-      // Eyes
-      g.fillStyle(0x000000, 1);
-      g.fillCircle(x + dir * 4, y - 70, 2);
-      // Weapon arm
-      if (fighter.combat.isAttacking) {
-        g.lineStyle(3, 0xaaaaaa, 1);
-        g.lineBetween(x + dir * 12, y - 40, x + dir * 40, y - 50);
+      if (isBoss) {
+        // Draw Mega-Fish as giant fish
+        const pulse = isEnraged ? Math.sin(Date.now() / 100) * 3 : 0;
+        // Body (large ellipse)
+        g.fillStyle(color, 1);
+        g.fillEllipse(x, y - 30 + pulse, 80, 40);
+        // Tail
+        g.fillTriangle(
+          x - dir * 40, y - 30,
+          x - dir * 60, y - 50,
+          x - dir * 60, y - 10,
+        );
+        // Dorsal fin
+        g.fillStyle(isEnraged ? 0xff4444 : 0x224466, 1);
+        g.fillTriangle(x, y - 50 + pulse, x - 15, y - 30, x + 15, y - 30);
+        // Eye (angry)
+        g.fillStyle(0xffffff, 1);
+        g.fillCircle(x + dir * 25, y - 35, 6);
+        g.fillStyle(isEnraged ? 0xff0000 : 0x000000, 1);
+        g.fillCircle(x + dir * 26, y - 35, 3);
+        // Teeth
+        g.fillStyle(0xffffff, 1);
+        for (let t = 0; t < 4; t++) {
+          g.fillTriangle(
+            x + dir * (10 + t * 8), y - 22,
+            x + dir * (14 + t * 8), y - 22,
+            x + dir * (12 + t * 8), y - 16,
+          );
+        }
+        // Enrage glow
+        if (isEnraged) {
+          g.lineStyle(2, 0xff0000, 0.4 + Math.sin(Date.now() / 150) * 0.3);
+          g.strokeEllipse(x, y - 30, 90, 50);
+        }
+      } else {
+        // Draw human enemy as tall figure
+        g.fillStyle(color, 1);
+        g.fillRect(x - 12, y - 60, 24, 55);
+        g.fillStyle(0xddaa88, 1);
+        g.fillCircle(x, y - 68, 10);
+        g.fillStyle(0x000000, 1);
+        g.fillCircle(x + dir * 4, y - 70, 2);
+        if (fighter.combat.isAttacking) {
+          g.lineStyle(3, 0xaaaaaa, 1);
+          g.lineBetween(x + dir * 12, y - 40, x + dir * 40, y - 50);
+        }
+        g.fillStyle(color, 0.8);
+        g.fillRect(x - 8, y - 5, 7, 10);
+        g.fillRect(x + 1, y - 5, 7, 10);
       }
-      // Legs
-      g.fillStyle(color, 0.8);
-      g.fillRect(x - 8, y - 5, 7, 10);
-      g.fillRect(x + 1, y - 5, 7, 10);
       return;
     }
 
