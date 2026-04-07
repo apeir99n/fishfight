@@ -19,7 +19,7 @@ export interface LadderState {
 
 const TOTAL_FIGHTS = 10;
 
-const ENEMY_ROTATION = ['carp', 'tuna', 'carp', 'tuna', 'carp', 'tuna', 'carp', 'tuna', 'carp', 'tuna'];
+const ENEMY_ROTATION = ['carp', 'tuna', 'squid', 'carp', 'tuna', 'squid', 'carp', 'squid', 'tuna', 'carp'];
 
 export function createLadderState(): LadderState {
   return {

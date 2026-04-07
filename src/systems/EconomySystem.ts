@@ -2,6 +2,7 @@ export interface PlayerSave {
   coins: number;
   unlockedWeapons: string[];
   equippedWeapon: string;
+  purchasedCharacters: string[];
   ladderClears: number;
 }
 
@@ -10,7 +11,18 @@ export function createPlayerSave(): PlayerSave {
     coins: 0,
     unlockedWeapons: ['toy_fish'],
     equippedWeapon: 'toy_fish',
+    purchasedCharacters: [],
     ladderClears: 0,
+  };
+}
+
+export function purchaseCharacter(save: PlayerSave, charId: string, price: number): PlayerSave {
+  if (save.purchasedCharacters.includes(charId)) return save;
+  if (!canAfford(save, price)) return save;
+  return {
+    ...save,
+    coins: save.coins - price,
+    purchasedCharacters: [...save.purchasedCharacters, charId],
   };
 }
 

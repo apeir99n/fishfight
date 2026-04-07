@@ -1,42 +1,57 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/game.config';
-import { getStarterCharacters, type CharacterDef } from '../config/characters.config';
-import { createPlayerSave } from '../systems/EconomySystem';
+import {
+  getAllCharacters,
+  isCharacterUnlocked,
+  type CharacterDef,
+} from '../config/characters.config';
+import { createPlayerSave, purchaseCharacter, type PlayerSave } from '../systems/EconomySystem';
 
 export class CharSelectScene extends Phaser.Scene {
   private characters!: CharacterDef[];
   private selectedIndex = 0;
   private sprites: Phaser.GameObjects.Sprite[] = [];
   private nameText!: Phaser.GameObjects.Text;
+  private infoText!: Phaser.GameObjects.Text;
   private selectorGraphics!: Phaser.GameObjects.Graphics;
+  private playerSave!: PlayerSave;
 
   constructor() {
     super({ key: 'CharSelectScene' });
   }
 
-  create(): void {
+  create(data?: { playerSave?: PlayerSave }): void {
     this.cameras.main.setBackgroundColor('#0d2137');
-    this.characters = getStarterCharacters();
+    this.characters = getAllCharacters();
+    this.playerSave = data?.playerSave || createPlayerSave();
     this.selectedIndex = 0;
     this.sprites = [];
 
     // Title
-    this.add.text(GAME_WIDTH / 2, 40, 'CHOOSE YOUR FISH', {
+    this.add.text(GAME_WIDTH / 2, 30, 'CHOOSE YOUR FISH', {
       fontSize: '28px', color: '#ffcc00', fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // Character sprites
-    const spacing = 140;
+    const spacing = 120;
     const startX = GAME_WIDTH / 2 - (spacing * (this.characters.length - 1)) / 2;
 
     for (let i = 0; i < this.characters.length; i++) {
       const char = this.characters[i];
       const x = startX + i * spacing;
-      const y = GAME_HEIGHT / 2 - 20;
+      const y = GAME_HEIGHT / 2 - 30;
+      const unlocked = isCharacterUnlocked(
+        char.id, this.playerSave.ladderClears, this.playerSave.coins, this.playerSave.purchasedCharacters
+      );
 
       const sprite = this.add.sprite(x, y, char.spriteSheet);
       sprite.play(`${char.id}_idle`);
-      sprite.setScale(3); // Scale up the 32x32 sprites
+      sprite.setScale(2.5);
+
+      if (!unlocked) {
+        sprite.setTint(0x333333);
+      }
+
       sprite.setInteractive({ useHandCursor: true });
       sprite.on('pointerdown', () => {
         this.selectedIndex = i;
@@ -45,20 +60,33 @@ export class CharSelectScene extends Phaser.Scene {
 
       this.sprites.push(sprite);
 
-      // Character name below
-      this.add.text(x, y + 60, char.name, {
-        fontSize: '16px', color: '#ffffff',
+      // Name + rarity
+      const rarityColors: Record<string, string> = {
+        common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff'
+      };
+      this.add.text(x, y + 50, char.name, {
+        fontSize: '12px', color: rarityColors[char.rarity] || '#ffffff',
       }).setOrigin(0.5);
+
+      // Lock icon
+      if (!unlocked) {
+        this.add.text(x, y - 5, '🔒', { fontSize: '20px' }).setOrigin(0.5);
+      }
     }
 
     // Selection indicator
     this.selectorGraphics = this.add.graphics();
-    this.updateSelection();
 
-    // Selected name (larger)
-    this.nameText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 80, '', {
+    // Info text
+    this.nameText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, '', {
       fontSize: '20px', color: '#ffcc00',
     }).setOrigin(0.5);
+
+    this.infoText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 75, '', {
+      fontSize: '12px', color: '#88bbdd',
+    }).setOrigin(0.5);
+
+    this.updateSelection();
 
     // Fight button
     const fightBtn = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 40, '[ FIGHT! ]', {
@@ -67,14 +95,9 @@ export class CharSelectScene extends Phaser.Scene {
 
     fightBtn.on('pointerover', () => fightBtn.setColor('#ffcc00'));
     fightBtn.on('pointerout', () => fightBtn.setColor('#ff4444'));
-    fightBtn.on('pointerdown', () => {
-      this.scene.start('LadderScene', {
-        playerCharId: this.characters[this.selectedIndex].id,
-        playerSave: createPlayerSave(),
-      });
-    });
+    fightBtn.on('pointerdown', () => this.tryStartGame());
 
-    // Keyboard nav
+    // Keyboard
     this.input.keyboard!.on('keydown-LEFT', () => {
       this.selectedIndex = Math.max(0, this.selectedIndex - 1);
       this.updateSelection();
@@ -83,29 +106,65 @@ export class CharSelectScene extends Phaser.Scene {
       this.selectedIndex = Math.min(this.characters.length - 1, this.selectedIndex + 1);
       this.updateSelection();
     });
-    this.input.keyboard!.on('keydown-ENTER', () => {
-      this.scene.start('LadderScene', {
-        playerCharId: this.characters[this.selectedIndex].id,
-        playerSave: createPlayerSave(),
-      });
+    this.input.keyboard!.on('keydown-ENTER', () => this.tryStartGame());
+
+    // Coins display
+    this.add.text(20, 10, `Coins: ${this.playerSave.coins}`, {
+      fontSize: '12px', color: '#ffcc00',
     });
 
-    // Controls hint
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 12, 'Arrow keys to select, Enter to fight', {
       fontSize: '10px', color: '#556677',
     }).setOrigin(0.5);
   }
 
+  private tryStartGame(): void {
+    const char = this.characters[this.selectedIndex];
+    const unlocked = isCharacterUnlocked(
+      char.id, this.playerSave.ladderClears, this.playerSave.coins, this.playerSave.purchasedCharacters
+    );
+
+    if (!unlocked && char.unlockCost) {
+      // Try to purchase
+      const updated = purchaseCharacter(this.playerSave, char.id, char.unlockCost);
+      if (updated !== this.playerSave) {
+        this.playerSave = updated;
+        this.scene.restart({ playerSave: this.playerSave });
+        return;
+      }
+      return; // Can't afford
+    }
+
+    if (!unlocked) return; // Locked by clears
+
+    this.scene.start('LadderScene', {
+      playerCharId: char.id,
+      playerSave: this.playerSave,
+    });
+  }
+
   private updateSelection(): void {
     const char = this.characters[this.selectedIndex];
-    this.nameText?.setText(`> ${char.name} <`);
+    const unlocked = isCharacterUnlocked(
+      char.id, this.playerSave.ladderClears, this.playerSave.coins, this.playerSave.purchasedCharacters
+    );
+
+    this.nameText.setText(`> ${char.name} <`);
+
+    if (unlocked) {
+      this.infoText.setText(`${char.rarity.toUpperCase()} — Ready to fight!`);
+    } else if (char.unlockCost) {
+      const canBuy = this.playerSave.coins >= char.unlockCost;
+      this.infoText.setText(`${char.unlockCost} coins to unlock${canBuy ? ' — Press Enter to buy!' : ''}`);
+    } else if (char.unlockClear) {
+      this.infoText.setText(`Complete ladder ${char.unlockClear} times to unlock`);
+    }
 
     // Draw selection box
     this.selectorGraphics.clear();
     const sprite = this.sprites[this.selectedIndex];
-    this.selectorGraphics.lineStyle(2, 0xffcc00, 1);
-    this.selectorGraphics.strokeRect(
-      sprite.x - 28, sprite.y - 28, 56, 56
-    );
+    const borderColor = unlocked ? 0xffcc00 : 0x666666;
+    this.selectorGraphics.lineStyle(2, borderColor, 1);
+    this.selectorGraphics.strokeRect(sprite.x - 24, sprite.y - 24, 48, 48);
   }
 }
