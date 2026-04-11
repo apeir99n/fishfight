@@ -8,6 +8,7 @@ import {
   calculateKnockback,
   applyDamage,
   checkKO,
+  registerHit,
   AttackType,
   type CombatState,
 } from '../CombatSystem';
@@ -183,6 +184,51 @@ describe('CombatSystem', () => {
 
     it('no KO at exactly the boundary', () => {
       expect(checkKO(400, 800, 0, 800, -100)).toBe(false);
+    });
+  });
+
+  describe('hit registration (one hit per swing)', () => {
+    it('createCombatState starts with hasHit false', () => {
+      const state = createCombatState();
+      expect(state.hasHit).toBe(false);
+    });
+
+    it('startAttack resets hasHit to false', () => {
+      // Simulate a state where the previous swing already registered its hit
+      // and has since finished (isAttacking=false).
+      const stale: CombatState = {
+        ...createCombatState(),
+        hasHit: true,
+      };
+      const result = startAttack(stale, AttackType.Light);
+      expect(result.isAttacking).toBe(true);
+      expect(result.hasHit).toBe(false);
+    });
+
+    it('registerHit marks the current swing as connected', () => {
+      let state = startAttack(createCombatState(), AttackType.Heavy);
+      expect(state.hasHit).toBe(false);
+      state = registerHit(state);
+      expect(state.hasHit).toBe(true);
+    });
+
+    it('registerHit is idempotent across repeated calls in one swing', () => {
+      let state = startAttack(createCombatState(), AttackType.Heavy);
+      state = registerHit(state);
+      state = registerHit(state);
+      state = registerHit(state);
+      expect(state.hasHit).toBe(true);
+    });
+
+    it('a fresh attack after a connected swing has hasHit=false again', () => {
+      let state = startAttack(createCombatState(), AttackType.Light);
+      state = registerHit(state);
+      // Finish the current swing.
+      state = updateAttack(state, 10);
+      expect(state.isAttacking).toBe(false);
+      // Next swing must be a clean slate.
+      state = startAttack(state, AttackType.Heavy);
+      expect(state.hasHit).toBe(false);
     });
   });
 
