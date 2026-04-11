@@ -1,5 +1,12 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config/game.config';
+
+// Verbose combat logging. Flip to false to silence the channel once the
+// simultaneous-hit behaviour is confirmed stable.
+const DEBUG_COMBAT = true;
+const dlog = (...args: unknown[]): void => {
+  if (DEBUG_COMBAT) console.log('[combat]', ...args);
+};
 import { getCharacter, type CharacterDef } from '../config/characters.config';
 import { getArena, type ArenaDef } from '../config/arenas.config';
 import { getEnemy, getBossPhase, type EnemyDef } from '../config/enemies.config';
@@ -25,6 +32,7 @@ import {
   calculateKnockback,
   applyDamage,
   checkKO,
+  registerHit,
   AttackType,
   type CombatState,
 } from '../systems/CombatSystem';
@@ -305,8 +313,10 @@ export class FightScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.J)) {
       p.combat = startAttack(p.combat, AttackType.Light);
+      dlog('player attack start', { type: 'light', hp: p.combat.hp });
     } else if (Phaser.Input.Keyboard.JustDown(this.keys.K)) {
       p.combat = startAttack(p.combat, AttackType.Heavy);
+      dlog('player attack start', { type: 'heavy', hp: p.combat.hp });
     } else if (Phaser.Input.Keyboard.JustDown(this.keys.L)) {
       // Fire equipped weapon
       const result = fireWeapon(p.weapon, p.movement.x, p.movement.y, p.movement.facingRight);
@@ -396,9 +406,11 @@ export class FightScene extends Phaser.Scene {
         break;
       case AIAction.LightAttack:
         e.combat = startAttack(e.combat, AttackType.Light);
+        dlog('ai attack start', { type: 'light', dist: Math.round(dist), hp: e.combat.hp });
         break;
       case AIAction.HeavyAttack:
         e.combat = startAttack(e.combat, AttackType.Heavy);
+        dlog('ai attack start', { type: 'heavy', dist: Math.round(dist), hp: e.combat.hp });
         break;
       case AIAction.WeaponAttack: {
         const result = fireWeapon(e.weapon, e.movement.x, e.movement.y, e.movement.facingRight);
@@ -593,6 +605,12 @@ export class FightScene extends Phaser.Scene {
   private resolveAttack(attacker: Fighter, defender: Fighter): void {
     if (!attacker.combat.isAttacking || !attacker.combat.currentAttack) return;
 
+    // One hit per swing. Without this guard, the ±30ms active window
+    // below spans 3-4 frames at 60 FPS, so the same swing used to
+    // register damage, knockback, and a tint delayedCall every frame —
+    // which was the source of the "simultaneous hit = lag" bug.
+    if (attacker.combat.hasHit) return;
+
     const attackDuration = attacker.combat.currentAttack === AttackType.Light ? 0.25
       : attacker.combat.currentAttack === AttackType.Heavy ? 0.65 : 0.4;
     const halfDuration = attackDuration / 2;
@@ -602,7 +620,15 @@ export class FightScene extends Phaser.Scene {
 
     const dist = Math.abs(attacker.movement.x - defender.movement.x);
     const attackRange = attacker.combat.currentAttack === AttackType.Special ? 150 : 80;
-    if (dist > attackRange) return;
+    if (dist > attackRange) {
+      dlog('whiff (out of range)', {
+        attack: attacker.combat.currentAttack, dist: Math.round(dist), range: attackRange,
+      });
+      // Mark swing as "resolved" even on whiff so we don't re-enter the
+      // window on subsequent frames in case the defender walks back in.
+      attacker.combat = registerHit(attacker.combat);
+      return;
+    }
 
     const damage = calculateDamage(attacker.combat.currentAttack, defender.combat.isBlocking);
     defender.combat = applyDamage(defender.combat, damage);
@@ -612,6 +638,18 @@ export class FightScene extends Phaser.Scene {
     defender.movement.velocityX = kb * direction * 3;
     defender.movement.velocityY = -kb * 0.5;
     defender.movement.isOnGround = false;
+
+    attacker.combat = registerHit(attacker.combat);
+
+    dlog('hit landed', {
+      attack: attacker.combat.currentAttack,
+      blocked: defender.combat.isBlocking,
+      damage,
+      kb: Math.round(kb),
+      defenderHp: defender.combat.hp,
+      defenderMaxHp: defender.combat.maxHp,
+      dist: Math.round(dist),
+    });
 
     // Hit flash
     defender.sprite.setTint(0xff0000);
@@ -633,8 +671,21 @@ export class FightScene extends Phaser.Scene {
       ko.left, ko.right, ko.top
     );
 
-    if (pKO) this.endMatch('DEFEAT');
-    else if (eKO) this.endMatch('K.O.!');
+    if (pKO) {
+      dlog('KO: player', {
+        x: Math.round(this.player.movement.x),
+        y: Math.round(this.player.movement.y),
+        hp: this.player.combat.hp,
+      });
+      this.endMatch('DEFEAT');
+    } else if (eKO) {
+      dlog('KO: enemy', {
+        x: Math.round(this.enemy.movement.x),
+        y: Math.round(this.enemy.movement.y),
+        hp: this.enemy.combat.hp,
+      });
+      this.endMatch('K.O.!');
+    }
   }
 
   private endMatch(text: string): void {
