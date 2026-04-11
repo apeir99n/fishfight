@@ -1058,12 +1058,26 @@ export class FightScene extends Phaser.Scene {
           break;
         }
         case 'super_weapon': {
-          // Glowing weapon spawn point
+          // Glowing weapon spawn point — 5-point star drawn as a filled
+          // polygon. (Phaser Graphics has no fillStar, the previous call
+          // threw every frame this event was active and crashed the scene.)
           const spawnX = GAME_WIDTH / 2;
           const spawnY = PHYSICS.floorY - 30;
           const glow = 0.5 + Math.sin(Date.now() / 200) * 0.3;
           this.graphics.fillStyle(0xffcc00, glow);
-          this.graphics.fillStar(spawnX, spawnY, 5, 10, 20);
+          const starPoints: Phaser.Geom.Point[] = [];
+          const spikes = 5;
+          const outer = 20;
+          const inner = 10;
+          for (let i = 0; i < spikes * 2; i++) {
+            const r = i % 2 === 0 ? outer : inner;
+            const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+            starPoints.push(new Phaser.Geom.Point(
+              spawnX + Math.cos(a) * r,
+              spawnY + Math.sin(a) * r,
+            ));
+          }
+          this.graphics.fillPoints(starPoints, true);
           break;
         }
       }
