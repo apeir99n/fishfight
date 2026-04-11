@@ -113,8 +113,8 @@ describe('RandomEventSystem', () => {
       expect(event!.name).toBeTruthy();
     });
 
-    it('all 4 event types exist', () => {
-      const types: RandomEvent['id'][] = ['super_weapon', 'lightning', 'poison_rain', 'seagull'];
+    it('all 3 event types exist', () => {
+      const types: RandomEvent['id'][] = ['lightning', 'poison_rain', 'seagull'];
       for (const id of types) {
         let state = createEventState();
         state = { ...state, activeEvent: id };
@@ -122,6 +122,12 @@ describe('RandomEventSystem', () => {
         expect(event).toBeDefined();
         expect(event!.id).toBe(id);
       }
+    });
+
+    it('super_weapon event has been removed', () => {
+      let state = createEventState();
+      state = { ...state, activeEvent: 'super_weapon' };
+      expect(getActiveEvent(state)).toBeNull();
     });
   });
 });
