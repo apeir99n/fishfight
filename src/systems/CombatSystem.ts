@@ -32,6 +32,12 @@ export interface CombatState {
   currentAttack: AttackType | null;
   attackTimer: number;
   isKO: boolean;
+  /**
+   * True once the current swing has already landed on a target. Prevents
+   * the same attack from registering multiple hits across the frames it
+   * spends inside the active hit window. Cleared on every startAttack().
+   */
+  hasHit: boolean;
 }
 
 export function createCombatState(): CombatState {
@@ -43,6 +49,7 @@ export function createCombatState(): CombatState {
     currentAttack: null,
     attackTimer: 0,
     isKO: false,
+    hasHit: false,
   };
 }
 
@@ -53,7 +60,13 @@ export function startAttack(state: CombatState, attack: AttackType): CombatState
     isAttacking: true,
     currentAttack: attack,
     attackTimer: ATTACK_DURATIONS[attack],
+    hasHit: false,
   };
+}
+
+export function registerHit(state: CombatState): CombatState {
+  if (state.hasHit) return state;
+  return { ...state, hasHit: true };
 }
 
 export function updateAttack(state: CombatState, dt: number): CombatState {
