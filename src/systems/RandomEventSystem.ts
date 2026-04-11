@@ -27,6 +27,15 @@ const EVENTS: RandomEvent[] = [
     duration: 4,
     warning: 'A seagull circles overhead!',
   },
+  {
+    id: 'fishing_hook',
+    name: 'Fishing Hook',
+    // Duration covers the descend → snatch → retract arc so the
+    // rendered line stays on screen briefly; damage is applied once
+    // on activation (see FightScene.updateRandomEvents).
+    duration: 0.8,
+    warning: 'A fishing hook descends!',
+  },
 ];
 
 export interface RandomEventState {
