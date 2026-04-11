@@ -839,7 +839,6 @@ export class FightScene extends Phaser.Scene {
         }
         break;
       }
-      // super_weapon: visual only in this implementation (weapon spawn point rendered)
     }
   }
 
@@ -1055,29 +1054,6 @@ export class FightScene extends Phaser.Scene {
           // Beak
           this.graphics.fillStyle(0xff8800, 1);
           this.graphics.fillTriangle(sx + 15, sy, sx + 22, sy + 2, sx + 15, sy + 4);
-          break;
-        }
-        case 'super_weapon': {
-          // Glowing weapon spawn point — 5-point star drawn as a filled
-          // polygon. (Phaser Graphics has no fillStar, the previous call
-          // threw every frame this event was active and crashed the scene.)
-          const spawnX = GAME_WIDTH / 2;
-          const spawnY = PHYSICS.floorY - 30;
-          const glow = 0.5 + Math.sin(Date.now() / 200) * 0.3;
-          this.graphics.fillStyle(0xffcc00, glow);
-          const starPoints: Phaser.Geom.Point[] = [];
-          const spikes = 5;
-          const outer = 20;
-          const inner = 10;
-          for (let i = 0; i < spikes * 2; i++) {
-            const r = i % 2 === 0 ? outer : inner;
-            const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
-            starPoints.push(new Phaser.Geom.Point(
-              spawnX + Math.cos(a) * r,
-              spawnY + Math.sin(a) * r,
-            ));
-          }
-          this.graphics.fillPoints(starPoints, true);
           break;
         }
       }
