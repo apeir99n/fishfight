@@ -8,12 +8,6 @@ export interface RandomEvent {
 
 const EVENTS: RandomEvent[] = [
   {
-    id: 'super_weapon',
-    name: 'Super Weapon Spawn',
-    duration: 8,
-    warning: 'A powerful weapon appears!',
-  },
-  {
     id: 'lightning',
     name: 'Lightning Strike',
     duration: 0.5,
