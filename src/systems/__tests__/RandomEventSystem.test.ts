@@ -113,8 +113,8 @@ describe('RandomEventSystem', () => {
       expect(event!.name).toBeTruthy();
     });
 
-    it('all 3 event types exist', () => {
-      const types: RandomEvent['id'][] = ['lightning', 'poison_rain', 'seagull'];
+    it('all 4 event types exist', () => {
+      const types: RandomEvent['id'][] = ['lightning', 'poison_rain', 'seagull', 'fishing_hook'];
       for (const id of types) {
         let state = createEventState();
         state = { ...state, activeEvent: id };
@@ -128,6 +128,16 @@ describe('RandomEventSystem', () => {
       let state = createEventState();
       state = { ...state, activeEvent: 'super_weapon' };
       expect(getActiveEvent(state)).toBeNull();
+    });
+
+    it('fishing_hook event has a warning string and a short duration', () => {
+      let state = createEventState();
+      state = { ...state, activeEvent: 'fishing_hook' };
+      const event = getActiveEvent(state);
+      expect(event).toBeDefined();
+      expect(event!.warning).toBeTruthy();
+      expect(event!.duration).toBeGreaterThan(0);
+      expect(event!.duration).toBeLessThanOrEqual(2);
     });
   });
 });
