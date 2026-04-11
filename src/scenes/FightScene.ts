@@ -113,6 +113,8 @@ export class FightScene extends Phaser.Scene {
   private eventWarningText!: Phaser.GameObjects.Text;
   private lightningX = 0;
   private seagullTarget: 'player' | 'enemy' = 'player';
+  private fishingHookX = 0;
+  private fishingHookTarget: 'player' | 'enemy' = 'player';
   private parasiteState!: ParasiteState;
   private dragonFishX = 0;
   private dragonFishY = 0;
@@ -801,6 +803,33 @@ export class FightScene extends Phaser.Scene {
       if (this.eventState.activeEvent === 'seagull') {
         this.seagullTarget = Math.random() < 0.5 ? 'player' : 'enemy';
       }
+      if (this.eventState.activeEvent === 'fishing_hook') {
+        // Pick a random drop point, catch whichever fighter is closer,
+        // and immediately remove half their current HP. One-shot effect —
+        // the active duration only keeps the line on screen for the
+        // snatch animation.
+        this.fishingHookX = 120 + Math.random() * (GAME_WIDTH - 240);
+        const pDist = Math.abs(this.player.movement.x - this.fishingHookX);
+        const eDist = Math.abs(this.enemy.movement.x - this.fishingHookX);
+        this.fishingHookTarget = pDist <= eDist ? 'player' : 'enemy';
+        const target = this.fishingHookTarget === 'player' ? this.player : this.enemy;
+        const damage = Math.floor(target.combat.hp / 2);
+        target.combat = applyDamage(target.combat, damage);
+        target.movement.velocityY = -260;
+        target.movement.isOnGround = false;
+        target.sprite.setTint(0xff0000);
+        this.time.delayedCall(180, () => {
+          if (!target.combat.isBlocking && !target.combat.isAttacking) {
+            target.sprite.clearTint();
+          }
+        });
+        dlog('fishing hook caught', {
+          target: this.fishingHookTarget,
+          hookX: Math.round(this.fishingHookX),
+          damage,
+          newHp: target.combat.hp,
+        });
+      }
     }
 
     // Apply active event effects
@@ -837,6 +866,16 @@ export class FightScene extends Phaser.Scene {
           target.movement.velocityY = -150;
           target.movement.isOnGround = false;
         }
+        break;
+      }
+      case 'fishing_hook': {
+        // Yank the caught fighter up toward the hook while the line is
+        // still on screen — the damage was already applied once on
+        // activation, this is just visual drag.
+        const target = this.fishingHookTarget === 'player' ? this.player : this.enemy;
+        target.movement.velocityY = -180;
+        target.movement.isOnGround = false;
+        target.movement.x += (this.fishingHookX - target.movement.x) * 6 * dt;
         break;
       }
     }
@@ -1054,6 +1093,26 @@ export class FightScene extends Phaser.Scene {
           // Beak
           this.graphics.fillStyle(0xff8800, 1);
           this.graphics.fillTriangle(sx + 15, sy, sx + 22, sy + 2, sx + 15, sy + 4);
+          break;
+        }
+        case 'fishing_hook': {
+          // Vertical line from top of screen down to the caught fighter,
+          // ending in a small J-shaped hook anchored at that fighter's
+          // mouth-ish height.
+          const caught = this.fishingHookTarget === 'player' ? this.player : this.enemy;
+          const hookX = caught.movement.x;
+          const hookY = caught.movement.y - 18;
+          // Taut fishing line
+          this.graphics.lineStyle(1, 0xeeeeee, 0.9);
+          this.graphics.lineBetween(hookX, 0, hookX, hookY);
+          // Hook curve — short vertical + small arc (approximated with 2 line segments)
+          this.graphics.lineStyle(2, 0xcccccc, 1);
+          this.graphics.lineBetween(hookX, hookY, hookX, hookY + 6);
+          this.graphics.lineBetween(hookX, hookY + 6, hookX + 5, hookY + 8);
+          this.graphics.lineBetween(hookX + 5, hookY + 8, hookX + 5, hookY + 4);
+          // Glint
+          this.graphics.fillStyle(0xffffff, 0.8);
+          this.graphics.fillCircle(hookX + 1, hookY + 2, 1);
           break;
         }
       }
