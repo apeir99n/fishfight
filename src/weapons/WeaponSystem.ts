@@ -58,7 +58,7 @@ const WEAPONS: WeaponDef[] = [
     attackSpeed: 0.4,
     cooldown: 1,
     projectileSpeed: 400,
-    price: 100,
+    price: 20,
   },
 ];
 
