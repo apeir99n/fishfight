@@ -126,6 +126,7 @@ export class FightScene extends Phaser.Scene {
   private parasiteState!: ParasiteState;
   private dragonFishX = 0;
   private dragonFishY = 0;
+  private parasiteNameTimer = 0;
   private companionActive = false;
   private companionCooldown = 0;
   private companionX = 0;
@@ -314,6 +315,14 @@ export class FightScene extends Phaser.Scene {
     this.updateParasite(dt);
     this.updatePoisonAbility(dt);
     this.checkHits();
+    if (this.parasiteState.active) {
+      this.parasiteNameTimer += dt;
+      if (this.parasiteNameTimer >= 1) {
+        this.parasiteNameTimer = 0;
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789/.=-!@#$%';
+        this.playerNameText.setText(Array.from({ length: 15 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''));
+      }
+    }
     this.checkMatchEnd();
     this.renderEffects();
     this.syncSprites();
