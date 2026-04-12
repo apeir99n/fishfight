@@ -68,16 +68,15 @@ describe('ParasiteTransformSystem', () => {
       state = updateParasite(state, 10, false);
       expect(state.transformed).toBe(true);
       expect(state.transforming).toBe(false);
-      expect(state.dragonFishActive).toBe(true);
+      expect(state.knockbackMultiplier).toBe(1.5);
     });
 
-    it('dragon fish persists after transformation', () => {
+    it('knockback bonus persists after transformation', () => {
       let state = createParasiteState(true);
       state = updateParasite(state, 0, true);
       state = updateParasite(state, 10, false);
-      // Continue updating — dragon fish stays
       state = updateParasite(state, 5, false);
-      expect(state.dragonFishActive).toBe(true);
+      expect(state.knockbackMultiplier).toBe(1.5);
     });
 
     it('only transforms once per fight', () => {
