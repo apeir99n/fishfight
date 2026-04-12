@@ -190,7 +190,7 @@ export class FightScene extends Phaser.Scene {
     this.inkState = createInkState(playerCharId === 'squid');
     this.inkHitApplied = false;
     this.inkFrozenText = this.add.text(0, 0, 'INK FROZEN!', {
-      fontSize: '12px', color: '#4444aa', fontStyle: 'bold',
+      fontSize: '12px', color: '#333333', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(10).setVisible(false);
 
     this.poisonedText = this.add.text(0, 0, 'POISONED!', {
