@@ -7,6 +7,7 @@ import {
   equipWeapon,
   purchaseCharacter,
   equipCharacter,
+  getCoinBonus,
   type PlayerSave,
 } from '../EconomySystem';
 
@@ -105,6 +106,57 @@ describe('EconomySystem', () => {
       save = purchaseCharacter(save, 'squid', 50);
       const result = purchaseCharacter(save, 'squid', 50);
       expect(result.coins).toBe(50); // not charged again
+    });
+  });
+
+  describe('totalSpent tracking', () => {
+    it('purchaseWeapon increases totalSpent', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 200);
+      save = purchaseWeapon(save, 'pufferfish_cannon', 20);
+      expect(save.totalSpent).toBe(20);
+    });
+
+    it('purchaseCharacter increases totalSpent', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 200);
+      save = purchaseCharacter(save, 'squid', 50);
+      expect(save.totalSpent).toBe(50);
+    });
+
+    it('multiple purchases accumulate totalSpent', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 200);
+      save = purchaseWeapon(save, 'pufferfish_cannon', 20);
+      save = purchaseCharacter(save, 'squid', 50);
+      expect(save.totalSpent).toBe(70);
+    });
+  });
+
+  describe('getCoinBonus', () => {
+    it('returns 1.0x multiplier when nothing spent', () => {
+      const save = createPlayerSave();
+      expect(getCoinBonus(save)).toBe(1);
+    });
+
+    it('returns higher multiplier after spending coins', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 200);
+      save = purchaseWeapon(save, 'pufferfish_cannon', 20);
+      save = purchaseCharacter(save, 'squid', 50);
+      expect(getCoinBonus(save)).toBeGreaterThan(1);
+    });
+
+    it('gives 10% bonus per 50 coins spent', () => {
+      let save = createPlayerSave();
+      save = { ...save, totalSpent: 100 };
+      expect(getCoinBonus(save)).toBeCloseTo(1.2);
+    });
+
+    it('caps at 2x multiplier', () => {
+      let save = createPlayerSave();
+      save = { ...save, totalSpent: 10000 };
+      expect(getCoinBonus(save)).toBe(2);
     });
   });
 
