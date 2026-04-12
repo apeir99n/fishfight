@@ -12,6 +12,7 @@ export interface PlayerSave {
   unlockedSkins: string[];
   equippedSkin: string | null;
   personality: number;  // 0=kind, 0.5=neutral, 1=bold
+  totalSpent: number;
   arenasPlayed: string[];
   bossesDefeated: string[];
 }
@@ -23,6 +24,7 @@ export function createPlayerSave(): PlayerSave {
     equippedWeapon: 'toy_fish',
     purchasedCharacters: [],
     equippedCharacter: 'tuna',
+    totalSpent: 0,
     ladderClears: 0,
     unlockedPets: [],
     equippedPet: null,
@@ -40,6 +42,7 @@ export function purchaseCharacter(save: PlayerSave, charId: string, price: numbe
   return {
     ...save,
     coins: save.coins - price,
+    totalSpent: save.totalSpent + price,
     purchasedCharacters: [...save.purchasedCharacters, charId],
   };
 }
@@ -52,12 +55,18 @@ export function canAfford(save: PlayerSave, price: number): boolean {
   return save.coins >= price;
 }
 
+export function getCoinBonus(save: PlayerSave): number {
+  const bonus = 1 + (save.totalSpent / 50) * 0.1;
+  return Math.min(bonus, 2);
+}
+
 export function purchaseWeapon(save: PlayerSave, weaponId: string, price: number): PlayerSave {
   if (save.unlockedWeapons.includes(weaponId)) return save;
   if (!canAfford(save, price)) return save;
   return {
     ...save,
     coins: save.coins - price,
+    totalSpent: save.totalSpent + price,
     unlockedWeapons: [...save.unlockedWeapons, weaponId],
   };
 }
@@ -83,6 +92,7 @@ export function purchaseSkin(save: PlayerSave, skinId: string, price: number): P
   return {
     ...save,
     coins: save.coins - price,
+    totalSpent: save.totalSpent + price,
     unlockedSkins: [...save.unlockedSkins, skinId],
   };
 }

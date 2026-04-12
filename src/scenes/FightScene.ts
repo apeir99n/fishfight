@@ -56,7 +56,7 @@ import {
   getCoinsForFight,
   type LadderState,
 } from '../systems/LadderSystem';
-import { addCoins, recordArenaPlayed, recordBossDefeated, type PlayerSave } from '../systems/EconomySystem';
+import { addCoins, getCoinBonus, recordArenaPlayed, recordBossDefeated, type PlayerSave } from '../systems/EconomySystem';
 import {
   createPetState,
   applySpeedBoost,
@@ -732,9 +732,12 @@ export class FightScene extends Phaser.Scene {
     if (won && isChefFight) {
       this.resultText.setText('FREEDOM!');
       this.showLiberationScene();
-    } else if (won && this.ladderState) {
-      const coins = getCoinsForFight(this.ladderState.currentFight);
-      this.resultText.setText(`${text}\n+${coins} coins`);
+    } else if (won && this.ladderState && this.playerSave) {
+      const baseCoins = getCoinsForFight(this.ladderState.currentFight);
+      const bonus = getCoinBonus(this.playerSave);
+      const coins = Math.round(baseCoins * bonus);
+      const bonusText = bonus > 1 ? ` (x${bonus.toFixed(1)})` : '';
+      this.resultText.setText(`${text}\n+${coins} coins${bonusText}`);
     } else {
       this.resultText.setText(text);
     }
@@ -746,7 +749,9 @@ export class FightScene extends Phaser.Scene {
         const updatedLadder = completeFight(this.ladderState, won);
         let updatedSave = this.playerSave;
         if (won) {
-          const coins = getCoinsForFight(this.ladderState.currentFight);
+          const baseCoins = getCoinsForFight(this.ladderState.currentFight);
+          const bonus = getCoinBonus(updatedSave);
+          const coins = Math.round(baseCoins * bonus);
           updatedSave = addCoins(updatedSave, coins);
           updatedSave = recordArenaPlayed(updatedSave, this.arena.id);
           if (this.enemy.enemyDef?.type === 'boss') {
