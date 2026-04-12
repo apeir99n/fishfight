@@ -87,25 +87,23 @@ export function decideAction(state: AIState, ctx: AIContext): AIAction {
       if (attackRoll < 0.5) return AIAction.HeavyAttack;
       return AIAction.LightAttack;
     }
-    // Stay close or block
+    // Stay close or block or dodge
     if (r < params.blockChance + params.attackFrequency) return AIAction.Block;
-    return AIAction.Idle;
+    if (Math.random() < 0.4 && ctx.aiIsOnGround) return AIAction.Jump;
+    return AIAction.MoveAway;
   }
 
-  // In weapon range but not melee — shoot or approach
+  // In weapon range but not melee — shoot or rush in
   if (inWeaponRange) {
     if (r < params.attackFrequency * 0.5) return AIAction.WeaponAttack;
-    if (r < params.aggression) return AIAction.MoveToward;
-    return AIAction.Idle;
+    if (Math.random() < 0.3 && ctx.aiIsOnGround) return AIAction.Jump;
+    return AIAction.MoveToward;
   }
 
-  // Far away — approach or idle
-  if (r < params.aggression) return AIAction.MoveToward;
+  // Far away — always approach, sometimes jump
+  if (Math.random() < 0.2 && ctx.aiIsOnGround) return AIAction.Jump;
 
-  // Occasional jump
-  if (r > 0.95 && ctx.aiIsOnGround) return AIAction.Jump;
-
-  return AIAction.Idle;
+  return AIAction.MoveToward;
 }
 
 export function updateAI(state: AIState, dt: number): AIState {
