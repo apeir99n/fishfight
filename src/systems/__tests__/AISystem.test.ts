@@ -11,20 +11,20 @@ import {
 
 describe('AISystem', () => {
   describe('getAIParams', () => {
-    it('returns params for level 1 (aggressive from the start)', () => {
+    it('returns params for level 1 (already tough)', () => {
       const p = getAIParams(1);
-      expect(p.reactionTime).toBeLessThanOrEqual(650);
-      expect(p.aggression).toBeGreaterThanOrEqual(0.35);
-      expect(p.blockChance).toBeGreaterThanOrEqual(0.08);
-      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.45);
+      expect(p.reactionTime).toBeLessThanOrEqual(250);
+      expect(p.aggression).toBeGreaterThanOrEqual(0.75);
+      expect(p.blockChance).toBeGreaterThanOrEqual(0.35);
+      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.75);
     });
 
-    it('returns params for level 10 (brutal)', () => {
+    it('returns params for level 10 (near impossible)', () => {
       const p = getAIParams(10);
-      expect(p.reactionTime).toBeLessThanOrEqual(120);
-      expect(p.aggression).toBeGreaterThanOrEqual(0.85);
-      expect(p.blockChance).toBeGreaterThanOrEqual(0.45);
-      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.85);
+      expect(p.reactionTime).toBeLessThanOrEqual(60);
+      expect(p.aggression).toBeGreaterThanOrEqual(0.95);
+      expect(p.blockChance).toBeGreaterThanOrEqual(0.65);
+      expect(p.attackFrequency).toBeGreaterThanOrEqual(0.95);
     });
 
     it('level 5 is between level 1 and 10', () => {
@@ -105,15 +105,15 @@ describe('AISystem', () => {
       expect(actions).toContain(AIAction.Block);
     });
 
-    it('low-level AI rarely blocks', () => {
-      const state = createAIState(1); // low block chance
+    it('low-level AI blocks often', () => {
+      const state = createAIState(1);
       const ctx = makeContext({ playerIsAttacking: true, distToPlayer: 60 });
       let blockCount = 0;
       for (let i = 0; i < 100; i++) {
         if (decideAction(state, ctx) === AIAction.Block) blockCount++;
       }
-      // Level 1 block chance ~5%, so expect very few
-      expect(blockCount).toBeLessThan(30);
+      // Level 1 block chance ~40%, expect plenty of blocks
+      expect(blockCount).toBeGreaterThan(10);
     });
 
     it('retreats sometimes when at low HP', () => {

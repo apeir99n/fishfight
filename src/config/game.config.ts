@@ -14,7 +14,7 @@ export const COMBAT = {
   heavyAttack: { damage: 15, knockback: 120, speed: 0.65 },
   specialAttack: { damage: 10, knockback: 80, speed: 0.4 },
   blockDamageReduction: 0.35,
-  maxHP: 120,
+  maxHP: 200,
   // knockback = baseKnockback * (1 + (maxHP - currentHP) / maxHP)
 };
 
@@ -24,7 +24,7 @@ export const ECONOMY = {
 };
 
 export const AI_LEVELS = {
-  1: { reactionTime: 600, aggression: 0.4, blockChance: 0.1, attackFrequency: 0.5 },
-  5: { reactionTime: 300, aggression: 0.65, blockChance: 0.3, attackFrequency: 0.7 },
-  10: { reactionTime: 100, aggression: 0.9, blockChance: 0.5, attackFrequency: 0.9 },
+  1: { reactionTime: 200, aggression: 0.8, blockChance: 0.4, attackFrequency: 0.8 },
+  5: { reactionTime: 100, aggression: 0.9, blockChance: 0.55, attackFrequency: 0.9 },
+  10: { reactionTime: 50, aggression: 0.98, blockChance: 0.7, attackFrequency: 0.98 },
 };
