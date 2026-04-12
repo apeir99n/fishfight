@@ -43,7 +43,7 @@ const CHARACTERS: CharacterDef[] = [
     frameHeight: 32,
     frameCount: 5,
     color: 0xff3333,
-    unlockCost: 50,
+    unlockCost: 0,
   },
   {
     id: 'pufferfish',
@@ -54,7 +54,7 @@ const CHARACTERS: CharacterDef[] = [
     frameHeight: 32,
     frameCount: 6,
     color: 0x44884a,
-    unlockCost: 50,
+    unlockCost: 0,
   },
   {
     id: 'sakabambaspis',
@@ -65,7 +65,7 @@ const CHARACTERS: CharacterDef[] = [
     frameHeight: 32,
     frameCount: 6,
     color: 0xffdd00,
-    unlockCost: 50,
+    unlockCost: 0,
   },
 ];
 

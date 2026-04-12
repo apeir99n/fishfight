@@ -41,7 +41,7 @@ describe('Characters Config', () => {
       expect(squid!.rarity).toBe('uncommon');
       expect(squid!.spriteSheet).toBe('squid_sheet');
       expect(squid!.frameCount).toBe(5);
-      expect(squid!.unlockCost).toBe(50);
+      expect(squid!.unlockCost).toBe(0);
     });
 
     it('returns Pufferfish character definition', () => {
@@ -50,7 +50,7 @@ describe('Characters Config', () => {
       expect(puffer!.id).toBe('pufferfish');
       expect(puffer!.name).toBe('Pufferfish');
       expect(puffer!.rarity).toBe('rare');
-      expect(puffer!.unlockCost).toBe(50);
+      expect(puffer!.unlockCost).toBe(0);
     });
 
     it('returns Sakabambaspis character definition', () => {
@@ -59,7 +59,7 @@ describe('Characters Config', () => {
       expect(saka!.id).toBe('sakabambaspis');
       expect(saka!.name).toBe('Sakabambaspis');
       expect(saka!.rarity).toBe('legendary');
-      expect(saka!.unlockCost).toBe(50);
+      expect(saka!.unlockCost).toBe(0);
     });
 
     it('all 5 characters have different colors', () => {
