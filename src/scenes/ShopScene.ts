@@ -2,17 +2,20 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/game.config';
 import { getAllWeapons, type WeaponDef } from '../weapons/WeaponSystem';
 import { getAllSkins, type SkinDef } from '../config/skins.config';
+import { getAllCharacters, type CharacterDef } from '../config/characters.config';
 import {
   purchaseWeapon,
   equipWeapon,
   purchaseSkin,
   equipSkin,
+  purchaseCharacter,
+  equipCharacter,
   canAfford,
   type PlayerSave,
 } from '../systems/EconomySystem';
 import { type LadderState } from '../systems/LadderSystem';
 
-type ShopTab = 'weapons' | 'skins';
+type ShopTab = 'weapons' | 'skins' | 'fish';
 
 export class ShopScene extends Phaser.Scene {
   private playerSave!: PlayerSave;
@@ -43,26 +46,35 @@ export class ShopScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Tabs
-    const weaponsTab = this.add.text(GAME_WIDTH / 2 - 80, 75, '[ WEAPONS ]', {
+    const weaponsTab = this.add.text(GAME_WIDTH / 2 - 120, 75, '[ WEAPONS ]', {
       fontSize: '14px',
       color: this.activeTab === 'weapons' ? '#ffcc00' : '#556677',
       fontStyle: this.activeTab === 'weapons' ? 'bold' : 'normal',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    const skinsTab = this.add.text(GAME_WIDTH / 2 + 80, 75, '[ SKINS ]', {
+    const skinsTab = this.add.text(GAME_WIDTH / 2, 75, '[ SKINS ]', {
       fontSize: '14px',
       color: this.activeTab === 'skins' ? '#ffcc00' : '#556677',
       fontStyle: this.activeTab === 'skins' ? 'bold' : 'normal',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
+    const fishTab = this.add.text(GAME_WIDTH / 2 + 120, 75, '[ FISH ]', {
+      fontSize: '14px',
+      color: this.activeTab === 'fish' ? '#ffcc00' : '#556677',
+      fontStyle: this.activeTab === 'fish' ? 'bold' : 'normal',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
     weaponsTab.on('pointerdown', () => this.switchTab('weapons'));
     skinsTab.on('pointerdown', () => this.switchTab('skins'));
+    fishTab.on('pointerdown', () => this.switchTab('fish'));
 
     // Content
     if (this.activeTab === 'weapons') {
       this.renderWeapons();
-    } else {
+    } else if (this.activeTab === 'skins') {
       this.renderSkins();
+    } else {
+      this.renderFish();
     }
 
     // Back button
@@ -154,6 +166,69 @@ export class ShopScene extends Phaser.Scene {
         buyBtn.on('pointerdown', () => {
           this.playerSave = purchaseWeapon(this.playerSave, weapon.id, weapon.price);
           this.switchTab('weapons');
+        });
+      }
+    }
+  }
+
+  private renderFish(): void {
+    const chars = getAllCharacters();
+    chars.forEach((c, i) => {
+      const y = 110 + i * 55;
+      this.createFishEntry(c, y);
+    });
+  }
+
+  private createFishEntry(char: CharacterDef, y: number): void {
+    const isStarter = char.rarity === 'common';
+    const owned = isStarter || this.playerSave.purchasedCharacters.includes(char.id);
+    const equipped = this.playerSave.equippedCharacter === char.id;
+    const price = char.unlockCost || 0;
+    const affordable = canAfford(this.playerSave, price);
+
+    // Color swatch
+    const g = this.add.graphics();
+    g.fillStyle(char.color, 1);
+    g.fillCircle(30, y + 12, 8);
+
+    // Rarity color
+    const rarityColors: Record<string, string> = {
+      common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff',
+    };
+
+    this.add.text(50, y, char.name, {
+      fontSize: '14px', color: rarityColors[char.rarity] || '#ffffff', fontStyle: 'bold',
+    });
+
+    this.add.text(50, y + 18, `${char.rarity.toUpperCase()}`, {
+      fontSize: '10px', color: '#667788',
+    });
+
+    if (equipped) {
+      this.add.text(GAME_WIDTH - 40, y + 8, 'EQUIPPED', {
+        fontSize: '13px', color: '#44cc44',
+      }).setOrigin(1, 0);
+    } else if (owned) {
+      const equipBtn = this.add.text(GAME_WIDTH - 40, y + 8, '[ EQUIP ]', {
+        fontSize: '13px', color: '#44aaff',
+      }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+
+      equipBtn.on('pointerdown', () => {
+        this.playerSave = equipCharacter(this.playerSave, char.id);
+        this.playerCharId = char.id;
+        this.switchTab('fish');
+      });
+    } else {
+      const priceColor = affordable ? '#ffcc00' : '#664444';
+      const buyBtn = this.add.text(GAME_WIDTH - 40, y + 8, `[ BUY ${price} ]`, {
+        fontSize: '13px', color: priceColor,
+      }).setOrigin(1, 0);
+
+      if (affordable) {
+        buyBtn.setInteractive({ useHandCursor: true });
+        buyBtn.on('pointerdown', () => {
+          this.playerSave = purchaseCharacter(this.playerSave, char.id, price);
+          this.switchTab('fish');
         });
       }
     }
