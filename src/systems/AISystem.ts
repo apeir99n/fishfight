@@ -68,6 +68,7 @@ export function decideAction(state: AIState, ctx: AIContext): AIAction {
   const inMeleeRange = ctx.distToPlayer < 80;
   const inWeaponRange = ctx.distToPlayer < 150;
   const lowHp = ctx.aiHp < 25;
+  const nearEdge = ctx.playerX < 120 || ctx.playerX > 680;
 
   // If player is attacking, consider blocking
   if (ctx.playerIsAttacking && inMeleeRange) {
@@ -82,6 +83,12 @@ export function decideAction(state: AIState, ctx: AIContext): AIAction {
   // In melee range — attack or use weapon
   if (inMeleeRange) {
     if (r < params.attackFrequency) {
+      // Near edge — spam heavy attacks to push them out
+      if (nearEdge) {
+        const attackRoll = Math.random();
+        if (attackRoll < 0.7) return AIAction.HeavyAttack;
+        return AIAction.LightAttack;
+      }
       const attackRoll = Math.random();
       if (attackRoll < 0.2) return AIAction.WeaponAttack;
       if (attackRoll < 0.5) return AIAction.HeavyAttack;
@@ -90,7 +97,7 @@ export function decideAction(state: AIState, ctx: AIContext): AIAction {
     // Stay close or block or dodge
     if (r < params.blockChance + params.attackFrequency) return AIAction.Block;
     if (Math.random() < 0.4 && ctx.aiIsOnGround) return AIAction.Jump;
-    return AIAction.MoveAway;
+    return AIAction.MoveToward;
   }
 
   // In weapon range but not melee — shoot or rush in
