@@ -13,7 +13,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'cap',
     name: 'Cap',
-    price: 30,
+    price: 0,
     color: 0xff4444,
     rarity: 'common',
     description: 'A sporty red cap',
@@ -21,7 +21,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'frying_pan_hat',
     name: 'Frying Pan Hat',
-    price: 30,
+    price: 0,
     color: 0x888888,
     rarity: 'common',
     description: 'A frying pan worn as a hat',
@@ -29,7 +29,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'carp_tshirt',
     name: 'Carp T-shirt',
-    price: 30,
+    price: 0,
     color: 0xff8800,
     rarity: 'common',
     description: 'A tiny shirt with a carp on it',
@@ -37,7 +37,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'carrot_mouth',
     name: 'Carrot Mouth',
-    price: 200,
+    price: 0,
     color: 0xff6600,
     rarity: 'rare',
     description: 'A carrot sticking out of the mouth',
@@ -45,7 +45,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'fish_sword',
     name: 'Fish Sword',
-    price: 200,
+    price: 0,
     color: 0xccccff,
     rarity: 'rare',
     description: 'A tiny sword strapped to the back',
@@ -53,7 +53,7 @@ const SKINS: SkinDef[] = [
   {
     id: 'parasite',
     name: 'Parasite',
-    price: 690,
+    price: 0,
     color: 0x220022,
     rarity: 'legendary',
     description: 'A facehugger parasite — transforms mid-fight!',
