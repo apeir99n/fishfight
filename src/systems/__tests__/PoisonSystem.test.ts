@@ -41,9 +41,11 @@ describe('PoisonSystem', () => {
     it('does not activate when on cooldown', () => {
       let state = createPoisonState(true);
       state = triggerPoison(state);
-      // still active/on cooldown
+      state = updatePoison(state, 1); // deactivate (active lasts 0.5s), starts cooldown
+      expect(state.cooldownTimer).toBeGreaterThan(0);
       const result = triggerPoison(state);
-      expect(result.cooldownTimer).toBeGreaterThan(0);
+      // should not re-activate while on cooldown
+      expect(result.active).toBe(false);
     });
   });
 
@@ -59,7 +61,7 @@ describe('PoisonSystem', () => {
     it('deactivates and starts cooldown when timer expires', () => {
       let state = createPoisonState(true);
       state = triggerPoison(state);
-      state = updatePoison(state, 10); // skip past active duration
+      state = updatePoison(state, 1); // past 0.5s active duration
       expect(state.active).toBe(false);
       expect(state.cooldownTimer).toBeGreaterThan(0);
     });
@@ -67,7 +69,7 @@ describe('PoisonSystem', () => {
     it('ticks down cooldown timer', () => {
       let state = createPoisonState(true);
       state = triggerPoison(state);
-      state = updatePoison(state, 10); // deactivate
+      state = updatePoison(state, 1); // deactivate, starts cooldown
       const cd = state.cooldownTimer;
       state = updatePoison(state, 1);
       expect(state.cooldownTimer).toBe(cd - 1);
