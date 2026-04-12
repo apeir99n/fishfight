@@ -82,6 +82,14 @@ import {
   isPoisonOnCooldown,
   type PoisonState,
 } from '../systems/PoisonSystem';
+import {
+  createInkState,
+  triggerInk,
+  updateInk,
+  isInkActive,
+  isInkOnCooldown,
+  type InkState,
+} from '../systems/InkSystem';
 import { getNewGamePlusScaling } from '../systems/NewGamePlusSystem';
 import {
   createEventState,
@@ -133,6 +141,9 @@ export class FightScene extends Phaser.Scene {
   private companionY = 0;
   private poisonState!: PoisonState;
   private poisonHitApplied = false;
+  private inkState!: InkState;
+  private inkHitApplied = false;
+  private inkFrozenText!: Phaser.GameObjects.Text;
   private poisonedText!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -175,6 +186,13 @@ export class FightScene extends Phaser.Scene {
     // Pufferfish poison ability
     this.poisonState = createPoisonState(playerCharId === 'pufferfish');
     this.poisonHitApplied = false;
+    // Squid ink ability
+    this.inkState = createInkState(playerCharId === 'squid');
+    this.inkHitApplied = false;
+    this.inkFrozenText = this.add.text(0, 0, 'INK FROZEN!', {
+      fontSize: '12px', color: '#4444aa', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(10).setVisible(false);
+
     this.poisonedText = this.add.text(0, 0, 'POISONED!', {
       fontSize: '12px', color: '#44ff44', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(10).setVisible(false);
@@ -314,6 +332,7 @@ export class FightScene extends Phaser.Scene {
     this.updateRandomEvents(dt);
     this.updateParasite(dt);
     this.updatePoisonAbility(dt);
+    this.updateInkAbility(dt);
     this.checkHits();
     if (this.parasiteState.active) {
       this.parasiteNameTimer += dt;
@@ -358,6 +377,11 @@ export class FightScene extends Phaser.Scene {
         this.poisonState = triggerPoison(this.poisonState);
         this.poisonHitApplied = false;
         dlog('pufferfish poison triggered');
+      } else if (this.inkState.enabled && !isInkOnCooldown(this.inkState) && !isInkActive(this.inkState)) {
+        // Squid ink ability
+        this.inkState = triggerInk(this.inkState);
+        this.inkHitApplied = false;
+        dlog('squid ink triggered');
       } else {
         // Fire equipped weapon
         const result = fireWeapon(p.weapon, p.movement.x, p.movement.y, p.movement.facingRight);
@@ -954,6 +978,28 @@ export class FightScene extends Phaser.Scene {
     }
   }
 
+  private updateInkAbility(dt: number): void {
+    if (!this.inkState.enabled) return;
+
+    this.inkState = updateInk(this.inkState, dt);
+
+    // Apply freeze if ink is active and enemy is in range
+    if (isInkActive(this.inkState) && !this.inkHitApplied) {
+      const dist = Math.abs(this.player.movement.x - this.enemy.movement.x);
+      if (dist <= this.inkState.range) {
+        this.enemy.movement = applyHitstun(this.enemy.movement, 0, 0, this.inkState.stunDuration);
+        this.enemy.sprite.setTint(0x111111);
+        this.inkHitApplied = true;
+        dlog('squid ink hit — enemy frozen for', this.inkState.stunDuration, 's');
+        this.time.delayedCall(this.inkState.stunDuration * 1000, () => {
+          if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+            this.enemy.sprite.clearTint();
+          }
+        });
+      }
+    }
+  }
+
   private updateParasite(dt: number): void {
     if (!this.parasiteState.active) return;
 
@@ -1087,6 +1133,45 @@ export class FightScene extends Phaser.Scene {
       this.graphics.fillStyle(0x44ff44, 0.4);
       this.graphics.fillRect(this.player.movement.x - 15, this.player.movement.y - 55, 30 * (1 - cdPct), 4);
       this.graphics.lineStyle(1, 0x44ff44, 0.6);
+      this.graphics.strokeRect(this.player.movement.x - 15, this.player.movement.y - 55, 30, 4);
+    }
+
+    // Ink cloud
+    if (isInkActive(this.inkState)) {
+      this.graphics.fillStyle(0x000000, 0.5);
+      this.graphics.fillCircle(this.player.movement.x, this.player.movement.y - 16, this.inkState.range);
+      this.graphics.lineStyle(2, 0x222222, 0.6);
+      this.graphics.strokeCircle(this.player.movement.x, this.player.movement.y - 16, this.inkState.range);
+    }
+
+    // Ink freeze cube on enemy
+    if (this.inkHitApplied && isInHitstun(this.enemy.movement)) {
+      const ex = this.enemy.movement.x;
+      const ey = this.enemy.movement.y - 16;
+      // Black ink cube around enemy
+      this.graphics.fillStyle(0x000000, 0.4);
+      this.graphics.fillRect(ex - 25, ey - 25, 50, 50);
+      this.graphics.lineStyle(2, 0x222222, 0.8);
+      this.graphics.strokeRect(ex - 25, ey - 25, 50, 50);
+      // Ink drip particles
+      const t = Date.now() / 250;
+      for (let i = 0; i < 4; i++) {
+        const dx = ex - 20 + i * 13;
+        const dy = ey + 25 + ((t * 10 + i * 8) % 20);
+        this.graphics.fillStyle(0x111111, 0.7 - i * 0.1);
+        this.graphics.fillCircle(dx, dy, 2);
+      }
+      this.inkFrozenText.setPosition(ex, ey - 35).setVisible(true);
+    } else {
+      this.inkFrozenText.setVisible(false);
+    }
+
+    // Ink cooldown indicator
+    if (this.inkState.enabled && isInkOnCooldown(this.inkState)) {
+      const cdPct = this.inkState.cooldownTimer / 12;
+      this.graphics.fillStyle(0x222222, 0.6);
+      this.graphics.fillRect(this.player.movement.x - 15, this.player.movement.y - 55, 30 * (1 - cdPct), 4);
+      this.graphics.lineStyle(1, 0x444444, 0.8);
       this.graphics.strokeRect(this.player.movement.x - 15, this.player.movement.y - 55, 30, 4);
     }
 
