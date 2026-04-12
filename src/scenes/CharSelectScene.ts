@@ -25,7 +25,8 @@ export class CharSelectScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0d2137');
     this.characters = getAllCharacters();
     this.playerSave = data?.playerSave || createPlayerSave();
-    this.selectedIndex = 0;
+    const equippedIdx = this.characters.findIndex(c => c.id === this.playerSave.equippedCharacter);
+    this.selectedIndex = equippedIdx >= 0 ? equippedIdx : 0;
     this.sprites = [];
 
     // Title

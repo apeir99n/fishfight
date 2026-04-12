@@ -95,8 +95,24 @@ export class LadderScene extends Phaser.Scene {
       });
     });
 
+    // Fish button
+    const fishBtn = this.add.text(GAME_WIDTH - 20, GAME_HEIGHT - 80, '[ FISH ]', {
+      fontSize: '16px', color: '#44cc88',
+    }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
+
+    fishBtn.on('pointerover', () => fishBtn.setColor('#ffcc00'));
+    fishBtn.on('pointerout', () => fishBtn.setColor('#44cc88'));
+    fishBtn.on('pointerdown', () => {
+      this.scene.start('ShopScene', {
+        ladderState: this.ladderState,
+        playerSave: this.playerSave,
+        playerCharId: this.playerCharId,
+        tab: 'fish',
+      });
+    });
+
     // Shop button
-    const shopBtn = this.add.text(GAME_WIDTH - 20, GAME_HEIGHT - 60, '[ SHOP ]', {
+    const shopBtn = this.add.text(GAME_WIDTH - 20, GAME_HEIGHT - 55, '[ SHOP ]', {
       fontSize: '16px', color: '#88bbdd',
     }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
 
