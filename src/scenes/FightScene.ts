@@ -229,7 +229,11 @@ export class FightScene extends Phaser.Scene {
       fontSize: '11px', color: '#88bbdd',
     }).setOrigin(0.5, 0);
 
-    const playerDisplayName = this.parasiteState.active ? '???????????' : playerDef.name;
+    let playerDisplayName = playerDef.name;
+    if (this.parasiteState.active) {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789/.=-!@#$%';
+      playerDisplayName = Array.from({ length: 15 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
     this.playerNameText = this.add.text(20, 50, playerDisplayName, {
       fontSize: '12px', color: '#ffffff',
     });
