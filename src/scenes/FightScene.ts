@@ -132,6 +132,7 @@ export class FightScene extends Phaser.Scene {
   private companionY = 0;
   private poisonState!: PoisonState;
   private poisonHitApplied = false;
+  private poisonedText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'FightScene' });
@@ -173,6 +174,9 @@ export class FightScene extends Phaser.Scene {
     // Pufferfish poison ability
     this.poisonState = createPoisonState(playerCharId === 'pufferfish');
     this.poisonHitApplied = false;
+    this.poisonedText = this.add.text(0, 0, 'POISONED!', {
+      fontSize: '12px', color: '#44ff44', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(10).setVisible(false);
 
     // Pufferfish companion from story arc
     const story = getStoryState(this.playerSave?.ladderClears ?? 0);
@@ -1033,6 +1037,28 @@ export class FightScene extends Phaser.Scene {
       this.graphics.fillCircle(this.player.movement.x, this.player.movement.y - 16, this.poisonState.range);
       this.graphics.lineStyle(2, 0x22cc22, 0.5);
       this.graphics.strokeCircle(this.player.movement.x, this.player.movement.y - 16, this.poisonState.range);
+    }
+
+    // Poison effect on stunned enemy
+    if (this.poisonHitApplied && isInHitstun(this.enemy.movement)) {
+      const ex = this.enemy.movement.x;
+      const ey = this.enemy.movement.y - 16;
+      const t = Date.now() / 300;
+      // Poison bubbles rising around enemy
+      for (let i = 0; i < 5; i++) {
+        const bx = ex + Math.sin(t + i * 1.3) * 20;
+        const by = ey - 10 - ((t * 15 + i * 12) % 40);
+        const r = 2 + Math.sin(t + i) * 1;
+        this.graphics.fillStyle(0x44ff44, 0.6 - i * 0.08);
+        this.graphics.fillCircle(bx, by, r);
+      }
+      // Green haze around enemy
+      this.graphics.fillStyle(0x44ff44, 0.1);
+      this.graphics.fillCircle(ex, ey, 35);
+      // Floating label
+      this.poisonedText.setPosition(ex, ey - 45).setVisible(true);
+    } else {
+      this.poisonedText.setVisible(false);
     }
 
     // Poison cooldown indicator
