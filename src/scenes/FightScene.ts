@@ -588,7 +588,10 @@ export class FightScene extends Phaser.Scene {
     fighter.sprite.setPosition(x, y - 16);
     fighter.sprite.setFlipX(!fighter.movement.facingRight);
 
-    if (fighter.combat.isAttacking) {
+    const isParasitePlayer = fighter === this.player && this.parasiteState.active;
+    if (isParasitePlayer) {
+      fighter.sprite.setTint(0x000000);
+    } else if (fighter.combat.isAttacking) {
       fighter.sprite.setTint(0xffff00);
     } else if (fighter.combat.isBlocking) {
       fighter.sprite.setTint(0x8888ff);
