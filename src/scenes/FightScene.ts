@@ -74,6 +74,14 @@ import {
   updateParasite,
   type ParasiteState,
 } from '../systems/ParasiteTransformSystem';
+import {
+  createPoisonState,
+  triggerPoison,
+  updatePoison,
+  isPoisonActive,
+  isPoisonOnCooldown,
+  type PoisonState,
+} from '../systems/PoisonSystem';
 import { getNewGamePlusScaling } from '../systems/NewGamePlusSystem';
 import {
   createEventState,
@@ -122,6 +130,8 @@ export class FightScene extends Phaser.Scene {
   private companionCooldown = 0;
   private companionX = 0;
   private companionY = 0;
+  private poisonState!: PoisonState;
+  private poisonHitApplied = false;
 
   constructor() {
     super({ key: 'FightScene' });
@@ -159,6 +169,10 @@ export class FightScene extends Phaser.Scene {
     this.eventWarningText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, '', {
       fontSize: '16px', color: '#ff4444', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(10);
+
+    // Pufferfish poison ability
+    this.poisonState = createPoisonState(playerCharId === 'pufferfish');
+    this.poisonHitApplied = false;
 
     // Pufferfish companion from story arc
     const story = getStoryState(this.playerSave?.ladderClears ?? 0);
@@ -289,6 +303,7 @@ export class FightScene extends Phaser.Scene {
     this.updateCompanion(dt);
     this.updateRandomEvents(dt);
     this.updateParasite(dt);
+    this.updatePoisonAbility(dt);
     this.checkHits();
     this.checkMatchEnd();
     this.renderEffects();
@@ -320,24 +335,30 @@ export class FightScene extends Phaser.Scene {
       p.combat = startAttack(p.combat, AttackType.Heavy);
       dlog('player attack start', { type: 'heavy', hp: p.combat.hp });
     } else if (Phaser.Input.Keyboard.JustDown(this.keys.L)) {
-      // Fire equipped weapon
-      const result = fireWeapon(p.weapon, p.movement.x, p.movement.y, p.movement.facingRight);
-      p.weapon = result.state;
-      if (result.meleeHit) {
-        // Melee weapon — check if enemy is in range and apply damage directly
-        const dist = Math.abs(p.movement.x - this.enemy.movement.x);
-        if (dist <= result.meleeHit.rangeX) {
-          this.enemy.combat = applyDamage(this.enemy.combat, result.meleeHit.damage);
-          const dir = p.movement.x < this.enemy.movement.x ? 1 : -1;
-          this.enemy.movement.velocityX = result.meleeHit.knockback * dir * 3;
-          this.enemy.movement.velocityY = -result.meleeHit.knockback * 0.5;
-          this.enemy.movement.isOnGround = false;
-          this.enemy.sprite.setTint(0xff0000);
-          this.time.delayedCall(100, () => {
-            if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
-              this.enemy.sprite.clearTint();
-            }
-          });
+      if (this.poisonState.enabled && !isPoisonOnCooldown(this.poisonState) && !isPoisonActive(this.poisonState)) {
+        // Pufferfish poison ability
+        this.poisonState = triggerPoison(this.poisonState);
+        this.poisonHitApplied = false;
+        dlog('pufferfish poison triggered');
+      } else {
+        // Fire equipped weapon
+        const result = fireWeapon(p.weapon, p.movement.x, p.movement.y, p.movement.facingRight);
+        p.weapon = result.state;
+        if (result.meleeHit) {
+          const dist = Math.abs(p.movement.x - this.enemy.movement.x);
+          if (dist <= result.meleeHit.rangeX) {
+            this.enemy.combat = applyDamage(this.enemy.combat, result.meleeHit.damage);
+            const dir = p.movement.x < this.enemy.movement.x ? 1 : -1;
+            this.enemy.movement.velocityX = result.meleeHit.knockback * dir * 3;
+            this.enemy.movement.velocityY = -result.meleeHit.knockback * 0.5;
+            this.enemy.movement.isOnGround = false;
+            this.enemy.sprite.setTint(0xff0000);
+            this.time.delayedCall(100, () => {
+              if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+                this.enemy.sprite.clearTint();
+              }
+            });
+          }
         }
       }
     }
@@ -881,6 +902,28 @@ export class FightScene extends Phaser.Scene {
     }
   }
 
+  private updatePoisonAbility(dt: number): void {
+    if (!this.poisonState.enabled) return;
+
+    this.poisonState = updatePoison(this.poisonState, dt);
+
+    // Apply stun if poison cloud is active and enemy is in range
+    if (isPoisonActive(this.poisonState) && !this.poisonHitApplied) {
+      const dist = Math.abs(this.player.movement.x - this.enemy.movement.x);
+      if (dist <= this.poisonState.range) {
+        this.enemy.movement = applyHitstun(this.enemy.movement, 0, 0, this.poisonState.stunDuration);
+        this.enemy.sprite.setTint(0x44ff44);
+        this.poisonHitApplied = true;
+        dlog('pufferfish poison hit — enemy stunned for', this.poisonState.stunDuration, 's');
+        this.time.delayedCall(this.poisonState.stunDuration * 1000, () => {
+          if (!this.enemy.combat.isBlocking && !this.enemy.combat.isAttacking) {
+            this.enemy.sprite.clearTint();
+          }
+        });
+      }
+    }
+  }
+
   private updateParasite(dt: number): void {
     if (!this.parasiteState.active) return;
 
@@ -982,6 +1025,23 @@ export class FightScene extends Phaser.Scene {
         this.graphics.lineStyle(3, 0x44aaff, 0.7);
         this.graphics.strokeCircle(fighter.movement.x, fighter.movement.y - 16, 30);
       }
+    }
+
+    // Poison cloud
+    if (isPoisonActive(this.poisonState)) {
+      this.graphics.fillStyle(0x44ff44, 0.3);
+      this.graphics.fillCircle(this.player.movement.x, this.player.movement.y - 16, this.poisonState.range);
+      this.graphics.lineStyle(2, 0x22cc22, 0.5);
+      this.graphics.strokeCircle(this.player.movement.x, this.player.movement.y - 16, this.poisonState.range);
+    }
+
+    // Poison cooldown indicator
+    if (this.poisonState.enabled && isPoisonOnCooldown(this.poisonState)) {
+      const cdPct = this.poisonState.cooldownTimer / 8;
+      this.graphics.fillStyle(0x44ff44, 0.4);
+      this.graphics.fillRect(this.player.movement.x - 15, this.player.movement.y - 55, 30 * (1 - cdPct), 4);
+      this.graphics.lineStyle(1, 0x44ff44, 0.6);
+      this.graphics.strokeRect(this.player.movement.x - 15, this.player.movement.y - 55, 30, 4);
     }
 
     // Projectiles
