@@ -229,7 +229,8 @@ export class FightScene extends Phaser.Scene {
       fontSize: '11px', color: '#88bbdd',
     }).setOrigin(0.5, 0);
 
-    this.playerNameText = this.add.text(20, 50, playerDef.name, {
+    const playerDisplayName = this.parasiteState.active ? '???????????' : playerDef.name;
+    this.playerNameText = this.add.text(20, 50, playerDisplayName, {
       fontSize: '12px', color: '#ffffff',
     });
     this.enemyNameText = this.add.text(GAME_WIDTH - 20, 50, enemyDef.name, {
