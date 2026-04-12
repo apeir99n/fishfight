@@ -1,4 +1,5 @@
 const TRANSFORM_DURATION = 1.0; // seconds for detachment animation
+const XENOMORPH_KNOCKBACK = 1.5; // 50% more knockback after transform
 
 export interface ParasiteState {
   active: boolean;
@@ -6,6 +7,7 @@ export interface ParasiteState {
   transforming: boolean;
   transformTimer: number;
   dragonFishActive: boolean;
+  knockbackMultiplier: number;
 }
 
 export function createParasiteState(hasParasiteSkin: boolean): ParasiteState {
@@ -15,6 +17,7 @@ export function createParasiteState(hasParasiteSkin: boolean): ParasiteState {
     transforming: false,
     transformTimer: 0,
     dragonFishActive: false,
+    knockbackMultiplier: 1,
   };
 }
 
@@ -47,6 +50,7 @@ export function updateParasite(state: ParasiteState, dt: number, triggerTransfor
         transformTimer: 0,
         transformed: true,
         dragonFishActive: true,
+        knockbackMultiplier: XENOMORPH_KNOCKBACK,
       };
     }
     return { ...state, transformTimer: remaining };

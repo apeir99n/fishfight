@@ -660,7 +660,11 @@ export class FightScene extends Phaser.Scene {
     const damage = calculateDamage(attacker.combat.currentAttack, defender.combat.isBlocking);
     defender.combat = applyDamage(defender.combat, damage);
 
-    const kb = calculateKnockback(attacker.combat.currentAttack, defender.combat.hp, defender.combat.maxHp);
+    let kb = calculateKnockback(attacker.combat.currentAttack, defender.combat.hp, defender.combat.maxHp);
+    // Xenomorph knockback bonus
+    if (attacker === this.player && this.parasiteState.transformed) {
+      kb *= this.parasiteState.knockbackMultiplier;
+    }
     const direction = attacker.movement.x < defender.movement.x ? 1 : -1;
     defender.movement.velocityX = kb * direction * 3;
     defender.movement.velocityY = -kb * 0.5;
@@ -939,13 +943,7 @@ export class FightScene extends Phaser.Scene {
     const trigger = shouldTransform(this.parasiteState, this.player.combat.hp, this.player.combat.maxHp);
     this.parasiteState = updateParasite(this.parasiteState, dt, trigger);
 
-    // Dragon fish follows and attacks
-    if (this.parasiteState.dragonFishActive) {
-      const targetX = this.player.movement.x + (this.player.movement.facingRight ? 30 : -30);
-      const targetY = this.player.movement.y - 25;
-      this.dragonFishX += (targetX - this.dragonFishX) * 3 * dt;
-      this.dragonFishY += (targetY - this.dragonFishY) * 3 * dt;
-    }
+    // Xenomorph visual is handled in renderEffects
   }
 
   private updateCompanion(dt: number): void {
@@ -1119,25 +1117,36 @@ export class FightScene extends Phaser.Scene {
       this.graphics.fillStyle(0x220022, 0.8 - fallProgress * 0.5);
       this.graphics.fillEllipse(fx, fy, 14 - fallProgress * 6, 10 - fallProgress * 4);
     }
-    if (this.parasiteState.dragonFishActive) {
-      // Tiny black dragon fish
-      const dx = this.dragonFishX;
-      const dy = this.dragonFishY + Math.sin(Date.now() / 200) * 3;
+    if (this.parasiteState.transformed) {
+      // Xenomorph tuna — tint sprite fully black
+      this.player.sprite.setTint(0x111111);
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 16;
       const dir = this.player.movement.facingRight ? 1 : -1;
-      // Body
-      this.graphics.fillStyle(0x111111, 1);
-      this.graphics.fillEllipse(dx, dy, 12, 7);
-      // Wings
-      this.graphics.fillStyle(0x333333, 1);
-      const wingFlap = Math.sin(Date.now() / 80) * 5;
-      this.graphics.fillTriangle(dx - 3, dy, dx - 10, dy - 8 + wingFlap, dx + 3, dy);
-      this.graphics.fillTriangle(dx - 3, dy, dx - 10, dy + 8 - wingFlap, dx + 3, dy);
-      // Eye (red)
-      this.graphics.fillStyle(0xff0000, 1);
-      this.graphics.fillCircle(dx + dir * 4, dy - 2, 1.5);
-      // Tail
-      this.graphics.lineStyle(1, 0x222222, 1);
-      this.graphics.lineBetween(dx - dir * 6, dy, dx - dir * 14, dy - 3);
+      // Elongated xenomorph head crest
+      this.graphics.fillStyle(0x000000, 0.9);
+      this.graphics.fillEllipse(px - dir * 2, py - 28, 8, 16);
+      // Inner mouth (when attacking)
+      if (this.player.combat.isAttacking) {
+        this.graphics.fillStyle(0x880000, 1);
+        this.graphics.fillCircle(px + dir * 12, py, 3);
+      }
+      // Xeno tail curving behind
+      this.graphics.lineStyle(2, 0x111111, 0.9);
+      const tailBase = px - dir * 16;
+      this.graphics.lineBetween(tailBase, py + 5, tailBase - dir * 12, py - 5);
+      this.graphics.lineBetween(tailBase - dir * 12, py - 5, tailBase - dir * 20, py - 15);
+      // Tail spike
+      this.graphics.fillStyle(0x222222, 1);
+      this.graphics.fillTriangle(
+        tailBase - dir * 20, py - 15,
+        tailBase - dir * 24, py - 20,
+        tailBase - dir * 18, py - 20,
+      );
+      // Acid drool
+      const t = Date.now() / 200;
+      this.graphics.fillStyle(0x44ff44, 0.5);
+      this.graphics.fillCircle(px + dir * 10, py + 8 + Math.sin(t) * 2, 1.5);
     }
 
     // Random event visuals
