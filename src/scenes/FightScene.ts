@@ -1097,6 +1097,17 @@ export class FightScene extends Phaser.Scene {
     // Parasite skin visuals — fish turns fully black (same shape, black eyes)
     if (this.parasiteState.active) {
       this.player.sprite.setTint(0x000000);
+      // Sharp teeth on the mouth
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 12;
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      const mouthX = px + dir * 14;
+      this.graphics.fillStyle(0xcccccc, 1);
+      for (let i = 0; i < 4; i++) {
+        const tx = mouthX + dir * (i * 3 - 4);
+        this.graphics.fillTriangle(tx, py, tx + 1.5, py + 4, tx + 3, py);
+        this.graphics.fillTriangle(tx, py + 5, tx + 1.5, py + 1, tx + 3, py + 5);
+      }
     }
     if (this.parasiteState.active && !this.parasiteState.transformed && !this.parasiteState.transforming) {
       // Facehugger on player's face
