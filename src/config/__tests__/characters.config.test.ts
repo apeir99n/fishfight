@@ -41,7 +41,7 @@ describe('Characters Config', () => {
       expect(squid!.rarity).toBe('uncommon');
       expect(squid!.spriteSheet).toBe('squid_sheet');
       expect(squid!.frameCount).toBe(5);
-      expect(squid!.unlockCost).toBe(250);
+      expect(squid!.unlockCost).toBe(50);
     });
 
     it('returns Pufferfish character definition', () => {
@@ -50,7 +50,7 @@ describe('Characters Config', () => {
       expect(puffer!.id).toBe('pufferfish');
       expect(puffer!.name).toBe('Pufferfish');
       expect(puffer!.rarity).toBe('rare');
-      expect(puffer!.unlockClear).toBe(5);
+      expect(puffer!.unlockCost).toBe(50);
     });
 
     it('returns Sakabambaspis character definition', () => {
@@ -59,7 +59,7 @@ describe('Characters Config', () => {
       expect(saka!.id).toBe('sakabambaspis');
       expect(saka!.name).toBe('Sakabambaspis');
       expect(saka!.rarity).toBe('legendary');
-      expect(saka!.unlockClear).toBe(10);
+      expect(saka!.unlockCost).toBe(50);
     });
 
     it('all 5 characters have different colors', () => {
@@ -106,14 +106,14 @@ describe('Characters Config', () => {
       expect(isCharacterUnlocked('squid', 0, 0, ['squid'])).toBe(true);
     });
 
-    it('pufferfish unlocks at 5 clears', () => {
-      expect(isCharacterUnlocked('pufferfish', 4, 0, [])).toBe(false);
-      expect(isCharacterUnlocked('pufferfish', 5, 0, [])).toBe(true);
+    it('pufferfish unlocks when purchased', () => {
+      expect(isCharacterUnlocked('pufferfish', 0, 0, [])).toBe(false);
+      expect(isCharacterUnlocked('pufferfish', 0, 0, ['pufferfish'])).toBe(true);
     });
 
-    it('sakabambaspis unlocks at 10 clears', () => {
-      expect(isCharacterUnlocked('sakabambaspis', 9, 0, [])).toBe(false);
-      expect(isCharacterUnlocked('sakabambaspis', 10, 0, [])).toBe(true);
+    it('sakabambaspis unlocks when purchased', () => {
+      expect(isCharacterUnlocked('sakabambaspis', 0, 0, [])).toBe(false);
+      expect(isCharacterUnlocked('sakabambaspis', 0, 0, ['sakabambaspis'])).toBe(true);
     });
   });
 });

@@ -53,7 +53,7 @@ const CHARACTERS: CharacterDef[] = [
     frameWidth: 32,
     frameHeight: 32,
     frameCount: 6,
-    color: 0x33cccc,
+    color: 0x44884a,
     unlockClear: 5,
   },
   {
@@ -64,7 +64,7 @@ const CHARACTERS: CharacterDef[] = [
     frameWidth: 32,
     frameHeight: 32,
     frameCount: 6,
-    color: 0xcc44ff,
+    color: 0xffdd00,
     unlockClear: 10,
   },
 ];

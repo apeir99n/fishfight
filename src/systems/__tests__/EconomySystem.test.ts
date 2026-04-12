@@ -5,6 +5,8 @@ import {
   canAfford,
   purchaseWeapon,
   equipWeapon,
+  purchaseCharacter,
+  equipCharacter,
   type PlayerSave,
 } from '../EconomySystem';
 
@@ -78,6 +80,53 @@ describe('EconomySystem', () => {
       const save = createPlayerSave();
       const result = equipWeapon(save, 'pufferfish_cannon');
       expect(result.equippedWeapon).toBe('toy_fish'); // unchanged
+    });
+  });
+
+  describe('purchaseCharacter', () => {
+    it('deducts coins and adds to purchasedCharacters', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 100);
+      const result = purchaseCharacter(save, 'squid', 50);
+      expect(result.coins).toBe(50);
+      expect(result.purchasedCharacters).toContain('squid');
+    });
+
+    it('does not purchase if cannot afford', () => {
+      const save = createPlayerSave();
+      const result = purchaseCharacter(save, 'squid', 50);
+      expect(result.coins).toBe(0);
+      expect(result.purchasedCharacters).not.toContain('squid');
+    });
+
+    it('does not purchase if already owned', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 100);
+      save = purchaseCharacter(save, 'squid', 50);
+      const result = purchaseCharacter(save, 'squid', 50);
+      expect(result.coins).toBe(50); // not charged again
+    });
+  });
+
+  describe('equipCharacter', () => {
+    it('equips a purchased character', () => {
+      let save = createPlayerSave();
+      save = addCoins(save, 50);
+      save = purchaseCharacter(save, 'squid', 50);
+      const result = equipCharacter(save, 'squid');
+      expect(result.equippedCharacter).toBe('squid');
+    });
+
+    it('equips a starter character without purchase', () => {
+      const save = createPlayerSave();
+      const result = equipCharacter(save, 'carp');
+      expect(result.equippedCharacter).toBe('carp');
+    });
+
+    it('does not equip an unpurchased non-starter character', () => {
+      const save = createPlayerSave();
+      const result = equipCharacter(save, 'squid');
+      expect(result.equippedCharacter).toBe('tuna'); // unchanged default
     });
   });
 });
