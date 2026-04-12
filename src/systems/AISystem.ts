@@ -45,10 +45,10 @@ export function getAIParams(level: number): AIParams {
   const t = (clamped - 1) / 9; // 0 at level 1, 1 at level 10
 
   return {
-    reactionTime: Math.round(lerp(1000, 180, t)),
-    aggression: lerp(0.15, 0.75, t),
-    blockChance: lerp(0.03, 0.35, t),
-    attackFrequency: lerp(0.2, 0.75, t),
+    reactionTime: Math.round(lerp(600, 100, t)),
+    aggression: lerp(0.4, 0.9, t),
+    blockChance: lerp(0.1, 0.5, t),
+    attackFrequency: lerp(0.5, 0.9, t),
   };
 }
 

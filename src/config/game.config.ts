@@ -24,7 +24,7 @@ export const ECONOMY = {
 };
 
 export const AI_LEVELS = {
-  1: { reactionTime: 1000, aggression: 0.15, blockChance: 0.03, attackFrequency: 0.2 },
-  5: { reactionTime: 500, aggression: 0.4, blockChance: 0.15, attackFrequency: 0.5 },
-  10: { reactionTime: 180, aggression: 0.75, blockChance: 0.35, attackFrequency: 0.75 },
+  1: { reactionTime: 600, aggression: 0.4, blockChance: 0.1, attackFrequency: 0.5 },
+  5: { reactionTime: 300, aggression: 0.65, blockChance: 0.3, attackFrequency: 0.7 },
+  10: { reactionTime: 100, aggression: 0.9, blockChance: 0.5, attackFrequency: 0.9 },
 };
