@@ -1094,7 +1094,10 @@ export class FightScene extends Phaser.Scene {
       }
     }
 
-    // Parasite skin visuals
+    // Parasite skin visuals — fish turns fully black (same shape, black eyes)
+    if (this.parasiteState.active) {
+      this.player.sprite.setTint(0x000000);
+    }
     if (this.parasiteState.active && !this.parasiteState.transformed && !this.parasiteState.transforming) {
       // Facehugger on player's face
       const fx = this.player.movement.x + (this.player.movement.facingRight ? 8 : -8);
@@ -1116,37 +1119,6 @@ export class FightScene extends Phaser.Scene {
       const fy = this.player.movement.y - 20 + fallProgress * 40;
       this.graphics.fillStyle(0x220022, 0.8 - fallProgress * 0.5);
       this.graphics.fillEllipse(fx, fy, 14 - fallProgress * 6, 10 - fallProgress * 4);
-    }
-    if (this.parasiteState.transformed) {
-      // Xenomorph tuna — tint sprite fully black
-      this.player.sprite.setTint(0x111111);
-      const px = this.player.movement.x;
-      const py = this.player.movement.y - 16;
-      const dir = this.player.movement.facingRight ? 1 : -1;
-      // Elongated xenomorph head crest
-      this.graphics.fillStyle(0x000000, 0.9);
-      this.graphics.fillEllipse(px - dir * 2, py - 28, 8, 16);
-      // Inner mouth (when attacking)
-      if (this.player.combat.isAttacking) {
-        this.graphics.fillStyle(0x880000, 1);
-        this.graphics.fillCircle(px + dir * 12, py, 3);
-      }
-      // Xeno tail curving behind
-      this.graphics.lineStyle(2, 0x111111, 0.9);
-      const tailBase = px - dir * 16;
-      this.graphics.lineBetween(tailBase, py + 5, tailBase - dir * 12, py - 5);
-      this.graphics.lineBetween(tailBase - dir * 12, py - 5, tailBase - dir * 20, py - 15);
-      // Tail spike
-      this.graphics.fillStyle(0x222222, 1);
-      this.graphics.fillTriangle(
-        tailBase - dir * 20, py - 15,
-        tailBase - dir * 24, py - 20,
-        tailBase - dir * 18, py - 20,
-      );
-      // Acid drool
-      const t = Date.now() / 200;
-      this.graphics.fillStyle(0x44ff44, 0.5);
-      this.graphics.fillCircle(px + dir * 10, py + 8 + Math.sin(t) * 2, 1.5);
     }
 
     // Random event visuals
