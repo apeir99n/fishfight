@@ -1,3 +1,5 @@
+import { getCharacter } from '../config/characters.config';
+
 export interface PlayerSave {
   coins: number;
   unlockedWeapons: string[];
@@ -6,6 +8,7 @@ export interface PlayerSave {
   ladderClears: number;
   unlockedPets: string[];
   equippedPet: string | null;
+  equippedCharacter: string;
   unlockedSkins: string[];
   equippedSkin: string | null;
   personality: number;  // 0=kind, 0.5=neutral, 1=bold
@@ -19,6 +22,7 @@ export function createPlayerSave(): PlayerSave {
     unlockedWeapons: ['toy_fish'],
     equippedWeapon: 'toy_fish',
     purchasedCharacters: [],
+    equippedCharacter: 'tuna',
     ladderClears: 0,
     unlockedPets: [],
     equippedPet: null,
@@ -91,6 +95,14 @@ export function equipSkin(save: PlayerSave, skinId: string | null): PlayerSave {
 export function recordArenaPlayed(save: PlayerSave, arenaId: string): PlayerSave {
   if (save.arenasPlayed.includes(arenaId)) return save;
   return { ...save, arenasPlayed: [...save.arenasPlayed, arenaId] };
+}
+
+export function equipCharacter(save: PlayerSave, charId: string): PlayerSave {
+  const char = getCharacter(charId);
+  if (!char) return save;
+  if (char.rarity === 'common') return { ...save, equippedCharacter: charId };
+  if (!save.purchasedCharacters.includes(charId)) return save;
+  return { ...save, equippedCharacter: charId };
 }
 
 export function recordBossDefeated(save: PlayerSave, bossId: string): PlayerSave {
