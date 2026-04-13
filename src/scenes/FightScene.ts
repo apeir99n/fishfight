@@ -1206,6 +1206,35 @@ export class FightScene extends Phaser.Scene {
       }
     }
 
+    // Carp T-shirt skin — white shirt on back half of fish with mini carp drawing
+    // Applies to carp/tuna/sakabambaspis (fish-shaped characters)
+    if (
+      this.playerSave?.equippedSkin === 'carp_tshirt' &&
+      ['carp', 'tuna', 'sakabambaspis'].includes(this.playerCharId)
+    ) {
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 16;
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      // White shirt patch on back half (opposite of facing)
+      const shirtCenterX = px - dir * 10;
+      const shirtCenterY = py;
+      this.graphics.fillStyle(0xffffff, 1);
+      this.graphics.fillRoundedRect(shirtCenterX - 10, shirtCenterY - 7, 20, 14, 2);
+      // Small carp drawing in center of shirt
+      // Body
+      this.graphics.fillStyle(0xff8800, 1);
+      this.graphics.fillEllipse(shirtCenterX, shirtCenterY, 10, 5);
+      // Tail
+      this.graphics.fillTriangle(
+        shirtCenterX - dir * 5, shirtCenterY,
+        shirtCenterX - dir * 9, shirtCenterY - 3,
+        shirtCenterX - dir * 9, shirtCenterY + 3,
+      );
+      // Eye
+      this.graphics.fillStyle(0x000000, 1);
+      this.graphics.fillCircle(shirtCenterX + dir * 3, shirtCenterY - 1, 0.8);
+    }
+
     // Fish Sword skin — tiny sword on top of the fish
     if (this.playerSave?.equippedSkin === 'fish_sword') {
       const px = this.player.movement.x;
