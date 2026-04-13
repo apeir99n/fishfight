@@ -1215,8 +1215,8 @@ export class FightScene extends Phaser.Scene {
       const px = this.player.movement.x;
       const py = this.player.movement.y - 16;
       const dir = this.player.movement.facingRight ? 1 : -1;
-      // White shirt patch on front half (body, toward facing direction)
-      const shirtCenterX = px + dir * 6;
+      // White shirt patch overlaps directly on the fish body pixels
+      const shirtCenterX = px;
       const shirtCenterY = py;
       this.graphics.fillStyle(0xffffff, 1);
       this.graphics.fillRoundedRect(shirtCenterX - 10, shirtCenterY - 7, 20, 14, 2);
