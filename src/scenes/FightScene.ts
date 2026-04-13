@@ -337,7 +337,7 @@ export class FightScene extends Phaser.Scene {
     this.updateInkAbility(dt);
     // Sword swing animation — trigger on attack start
     if (this.player.combat.isAttacking && !this.playerWasAttacking && this.playerSave?.equippedSkin === 'fish_sword') {
-      this.swordSwingTimer = 0.25;
+      this.swordSwingTimer = 0.125;
     }
     this.playerWasAttacking = this.player.combat.isAttacking;
     if (this.swordSwingTimer > 0) {
@@ -1210,22 +1210,13 @@ export class FightScene extends Phaser.Scene {
     if (this.playerSave?.equippedSkin === 'fish_sword') {
       const px = this.player.movement.x;
       const py = this.player.movement.y - 40; // on top of fish, pivot point
-      const dir = this.player.movement.facingRight ? 1 : -1;
+      // Rotate toward opponent's actual side (not fish facing direction)
+      const toOpponent = this.enemy.movement.x >= this.player.movement.x ? 1 : -1;
       const bladeLen = 32;
-      // Swing animation: 0 → 90° toward opponent → 0 over 0.25s
-      // progress 0→1 as timer 0.25→0
-      const progress = this.swordSwingTimer > 0 ? 1 - this.swordSwingTimer / 0.25 : 0;
-      const swingAngle = Math.sin(Math.PI * progress) * (Math.PI / 2) * dir;
+      // Swing animation: 0 → 90° toward opponent → 0 over 0.125s
+      const progress = this.swordSwingTimer > 0 ? 1 - this.swordSwingTimer / 0.125 : 0;
+      const swingAngle = Math.sin(Math.PI * progress) * (Math.PI / 2) * toOpponent;
 
-      // Precompute rotation: rotates a point (0, dy) around pivot (px, py)
-      const rot = (dy: number): { x: number; y: number } => {
-        // Local coords: (lx, ly) relative to pivot, then rotate by swingAngle
-        // Sword is drawn vertical by default at x offset 0 with y offset dy (negative = up)
-        return {
-          x: px - Math.sin(swingAngle) * dy,
-          y: py + Math.cos(swingAngle) * dy,
-        };
-      };
       const rotXY = (lx: number, ly: number): { x: number; y: number } => {
         const cos = Math.cos(swingAngle);
         const sin = Math.sin(swingAngle);
@@ -1235,10 +1226,10 @@ export class FightScene extends Phaser.Scene {
         };
       };
 
-      // Blade (triangle from pivot tip at (0, -bladeLen) to base at (±2, 0))
+      // Blade (straight upright by default, tapered tip at (0, -bladeLen))
       const bladeBaseL = rotXY(-2, 0);
       const bladeBaseR = rotXY(2, 0);
-      const bladeTip = rotXY(dir * 2, -bladeLen);
+      const bladeTip = rotXY(0, -bladeLen);
       this.graphics.fillStyle(0xccccff, 1);
       this.graphics.fillTriangle(
         bladeBaseL.x, bladeBaseL.y,
@@ -1246,8 +1237,8 @@ export class FightScene extends Phaser.Scene {
         bladeTip.x, bladeTip.y,
       );
       // Blade highlight
-      const hlStart = rot(0);
-      const hlEnd = rotXY(dir * 1, -bladeLen + 2);
+      const hlStart = rotXY(0, 0);
+      const hlEnd = rotXY(0, -bladeLen + 2);
       this.graphics.lineStyle(1, 0xffffff, 0.9);
       this.graphics.lineBetween(hlStart.x, hlStart.y, hlEnd.x, hlEnd.y);
       // Crossguard (rect, rotated)
