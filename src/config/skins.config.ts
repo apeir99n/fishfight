@@ -35,14 +35,6 @@ const SKINS: SkinDef[] = [
     description: 'A tiny shirt with a carp on it',
   },
   {
-    id: 'carrot_mouth',
-    name: 'Carrot Mouth',
-    price: 0,
-    color: 0xff6600,
-    rarity: 'rare',
-    description: 'A carrot sticking out of the mouth',
-  },
-  {
     id: 'fish_sword',
     name: 'Fish Sword',
     price: 0,

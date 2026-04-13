@@ -7,8 +7,8 @@ import {
 
 describe('Skins Config', () => {
   describe('getAllSkins', () => {
-    it('returns exactly 6 skins', () => {
-      expect(getAllSkins().length).toBe(6);
+    it('returns exactly 5 skins', () => {
+      expect(getAllSkins().length).toBe(5);
     });
 
     it('each skin has required fields', () => {
@@ -48,13 +48,7 @@ describe('Skins Config', () => {
       expect(s!.price).toBe(0);
     });
 
-    it('returns Carrot Mouth', () => {
-      const s = getSkin('carrot_mouth');
-      expect(s).toBeDefined();
-      expect(s!.price).toBe(0);
-    });
-
-    it('returns Fish Sword', () => {
+it('returns Fish Sword', () => {
       const s = getSkin('fish_sword');
       expect(s).toBeDefined();
       expect(s!.price).toBe(0);
