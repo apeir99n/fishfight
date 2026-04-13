@@ -1196,7 +1196,34 @@ export class FightScene extends Phaser.Scene {
       }
     }
 
-// Parasite skin visuals — fish turns fully black (same shape, black eyes)
+    // Fish Sword skin — tiny sword on top of the fish
+    if (this.playerSave?.equippedSkin === 'fish_sword') {
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 40; // on top of fish
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      const bladeLen = 32;
+      // Blade
+      this.graphics.fillStyle(0xccccff, 1);
+      this.graphics.fillTriangle(
+        px - 2, py,
+        px + 2, py,
+        px + dir * 2, py - bladeLen,
+      );
+      // Blade highlight
+      this.graphics.lineStyle(1, 0xffffff, 0.9);
+      this.graphics.lineBetween(px, py, px + dir * 1, py - bladeLen + 2);
+      // Crossguard
+      this.graphics.fillStyle(0x888888, 1);
+      this.graphics.fillRect(px - 6, py, 12, 3);
+      // Hilt
+      this.graphics.fillStyle(0x663300, 1);
+      this.graphics.fillRect(px - 2, py + 3, 4, 6);
+      // Pommel
+      this.graphics.fillStyle(0xffcc00, 1);
+      this.graphics.fillCircle(px, py + 10, 2);
+    }
+
+    // Parasite skin visuals — fish turns fully black (same shape, black eyes)
     if (this.parasiteState.active) {
       this.player.sprite.setTint(0x000000);
     }
