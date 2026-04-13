@@ -1196,6 +1196,31 @@ export class FightScene extends Phaser.Scene {
       }
     }
 
+    // Carrot mouth skin — carrot sticking out where the mouth is
+    if (this.playerSave?.equippedSkin === 'carrot_mouth') {
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 12;
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      const cx = px + dir * 12;
+      const cy = py + 2;
+      // Carrot body (orange triangle pointing outward)
+      this.graphics.fillStyle(0xff6600, 1);
+      this.graphics.fillTriangle(
+        cx, cy - 3,
+        cx, cy + 3,
+        cx + dir * 14, cy,
+      );
+      // Carrot ridges
+      this.graphics.lineStyle(1, 0xcc4400, 0.8);
+      this.graphics.lineBetween(cx + dir * 4, cy - 2, cx + dir * 4, cy + 2);
+      this.graphics.lineBetween(cx + dir * 8, cy - 1.5, cx + dir * 8, cy + 1.5);
+      // Leafy green top (at the base of the carrot, near the mouth)
+      this.graphics.fillStyle(0x22aa22, 1);
+      this.graphics.fillTriangle(cx - dir * 1, cy - 5, cx - dir * 4, cy - 8, cx + dir * 1, cy - 3);
+      this.graphics.fillTriangle(cx - dir * 1, cy + 5, cx - dir * 4, cy + 8, cx + dir * 1, cy + 3);
+      this.graphics.fillTriangle(cx - dir * 2, cy, cx - dir * 6, cy - 4, cx - dir * 6, cy + 4);
+    }
+
     // Parasite skin visuals — fish turns fully black (same shape, black eyes)
     if (this.parasiteState.active) {
       this.player.sprite.setTint(0x000000);
