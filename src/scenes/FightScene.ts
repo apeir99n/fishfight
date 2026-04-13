@@ -1199,7 +1199,7 @@ export class FightScene extends Phaser.Scene {
     // Carrot mouth skin — carrot sticking out where the mouth is
     if (this.playerSave?.equippedSkin === 'carrot_mouth') {
       const px = this.player.movement.x;
-      const py = this.player.movement.y - 12;
+      const py = this.player.movement.y - 18;
       const dir = this.player.movement.facingRight ? 1 : -1;
       const cx = px + dir * 12;
       const cy = py + 2;
