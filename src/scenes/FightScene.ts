@@ -139,6 +139,8 @@ export class FightScene extends Phaser.Scene {
   private companionCooldown = 0;
   private companionX = 0;
   private companionY = 0;
+  private swordSwingTimer = 0;
+  private playerWasAttacking = false;
   private poisonState!: PoisonState;
   private poisonHitApplied = false;
   private inkState!: InkState;
@@ -333,6 +335,14 @@ export class FightScene extends Phaser.Scene {
     this.updateParasite(dt);
     this.updatePoisonAbility(dt);
     this.updateInkAbility(dt);
+    // Sword swing animation — trigger on attack start
+    if (this.player.combat.isAttacking && !this.playerWasAttacking && this.playerSave?.equippedSkin === 'fish_sword') {
+      this.swordSwingTimer = 0.25;
+    }
+    this.playerWasAttacking = this.player.combat.isAttacking;
+    if (this.swordSwingTimer > 0) {
+      this.swordSwingTimer = Math.max(0, this.swordSwingTimer - dt);
+    }
     this.checkHits();
     if (this.parasiteState.active) {
       this.parasiteNameTimer += dt;
@@ -1199,28 +1209,67 @@ export class FightScene extends Phaser.Scene {
     // Fish Sword skin — tiny sword on top of the fish
     if (this.playerSave?.equippedSkin === 'fish_sword') {
       const px = this.player.movement.x;
-      const py = this.player.movement.y - 40; // on top of fish
+      const py = this.player.movement.y - 40; // on top of fish, pivot point
       const dir = this.player.movement.facingRight ? 1 : -1;
       const bladeLen = 32;
-      // Blade
+      // Swing animation: 0 → 90° toward opponent → 0 over 0.25s
+      // progress 0→1 as timer 0.25→0
+      const progress = this.swordSwingTimer > 0 ? 1 - this.swordSwingTimer / 0.25 : 0;
+      const swingAngle = Math.sin(Math.PI * progress) * (Math.PI / 2) * dir;
+
+      // Precompute rotation: rotates a point (0, dy) around pivot (px, py)
+      const rot = (dy: number): { x: number; y: number } => {
+        // Local coords: (lx, ly) relative to pivot, then rotate by swingAngle
+        // Sword is drawn vertical by default at x offset 0 with y offset dy (negative = up)
+        return {
+          x: px - Math.sin(swingAngle) * dy,
+          y: py + Math.cos(swingAngle) * dy,
+        };
+      };
+      const rotXY = (lx: number, ly: number): { x: number; y: number } => {
+        const cos = Math.cos(swingAngle);
+        const sin = Math.sin(swingAngle);
+        return {
+          x: px + lx * cos - ly * sin,
+          y: py + lx * sin + ly * cos,
+        };
+      };
+
+      // Blade (triangle from pivot tip at (0, -bladeLen) to base at (±2, 0))
+      const bladeBaseL = rotXY(-2, 0);
+      const bladeBaseR = rotXY(2, 0);
+      const bladeTip = rotXY(dir * 2, -bladeLen);
       this.graphics.fillStyle(0xccccff, 1);
       this.graphics.fillTriangle(
-        px - 2, py,
-        px + 2, py,
-        px + dir * 2, py - bladeLen,
+        bladeBaseL.x, bladeBaseL.y,
+        bladeBaseR.x, bladeBaseR.y,
+        bladeTip.x, bladeTip.y,
       );
       // Blade highlight
+      const hlStart = rot(0);
+      const hlEnd = rotXY(dir * 1, -bladeLen + 2);
       this.graphics.lineStyle(1, 0xffffff, 0.9);
-      this.graphics.lineBetween(px, py, px + dir * 1, py - bladeLen + 2);
-      // Crossguard
+      this.graphics.lineBetween(hlStart.x, hlStart.y, hlEnd.x, hlEnd.y);
+      // Crossguard (rect, rotated)
+      const cgA = rotXY(-6, 0);
+      const cgB = rotXY(6, 0);
+      const cgC = rotXY(6, 3);
+      const cgD = rotXY(-6, 3);
       this.graphics.fillStyle(0x888888, 1);
-      this.graphics.fillRect(px - 6, py, 12, 3);
+      this.graphics.fillTriangle(cgA.x, cgA.y, cgB.x, cgB.y, cgC.x, cgC.y);
+      this.graphics.fillTriangle(cgA.x, cgA.y, cgC.x, cgC.y, cgD.x, cgD.y);
       // Hilt
+      const hA = rotXY(-2, 3);
+      const hB = rotXY(2, 3);
+      const hC = rotXY(2, 9);
+      const hD = rotXY(-2, 9);
       this.graphics.fillStyle(0x663300, 1);
-      this.graphics.fillRect(px - 2, py + 3, 4, 6);
+      this.graphics.fillTriangle(hA.x, hA.y, hB.x, hB.y, hC.x, hC.y);
+      this.graphics.fillTriangle(hA.x, hA.y, hC.x, hC.y, hD.x, hD.y);
       // Pommel
+      const pom = rotXY(0, 10);
       this.graphics.fillStyle(0xffcc00, 1);
-      this.graphics.fillCircle(px, py + 10, 2);
+      this.graphics.fillCircle(pom.x, pom.y, 2);
     }
 
     // Parasite skin visuals — fish turns fully black (same shape, black eyes)
