@@ -29,6 +29,3 @@ coverage/
 # Orchestra (agent status)
 .orchestra/
 
-# Save server data (per-player JSON)
-server/saves/*.json
-

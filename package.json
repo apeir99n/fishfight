@@ -7,8 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "server": "node server/index.mjs"
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
