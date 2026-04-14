@@ -1235,6 +1235,29 @@ export class FightScene extends Phaser.Scene {
       this.graphics.fillCircle(shirtCenterX + dir * 3, shirtCenterY - 1, 0.8);
     }
 
+    // Cap skin — red baseball cap on top of the fish
+    if (this.playerSave?.equippedSkin === 'cap') {
+      const px = this.player.movement.x;
+      const py = this.player.movement.y - 28; // sit on top of fish head
+      const dir = this.player.movement.facingRight ? 1 : -1;
+      // Crown (dome of cap)
+      this.graphics.fillStyle(0xcc0000, 1);
+      this.graphics.fillEllipse(px, py, 18, 10);
+      // Flatten bottom so it sits on the head
+      this.graphics.fillRect(px - 9, py, 18, 3);
+      // Brim (points forward in facing direction)
+      this.graphics.fillStyle(0x990000, 1);
+      this.graphics.fillTriangle(
+        px + dir * 3, py + 2,
+        px + dir * 13, py + 2,
+        px + dir * 11, py + 5,
+      );
+      this.graphics.fillRect(px + (dir > 0 ? 3 : -13), py + 2, 10, 2);
+      // Button on top
+      this.graphics.fillStyle(0xffffff, 1);
+      this.graphics.fillCircle(px, py - 5, 1.2);
+    }
+
     // Fish Sword skin — tiny sword on top of the fish
     if (this.playerSave?.equippedSkin === 'fish_sword') {
       const px = this.player.movement.x;
