@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/game.config';
-import { createPlayerSave } from '../systems/EconomySystem';
+import { createPlayerSave, type PlayerSave } from '../systems/EconomySystem';
+import { fetchSave, getOrCreatePlayerId } from '../utils/saveClient';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -32,8 +33,13 @@ export class MenuScene extends Phaser.Scene {
 
     startButton.on('pointerover', () => startButton.setColor('#ffcc00'));
     startButton.on('pointerout', () => startButton.setColor('#ffffff'));
-    startButton.on('pointerdown', () => {
-      this.scene.start('CharSelectScene');
+    startButton.on('pointerdown', async () => {
+      // Try to restore the player's save from the server. Falls back to a
+      // fresh save if the server is offline or this is a new player.
+      const playerId = getOrCreatePlayerId();
+      const remote = await fetchSave(playerId);
+      const playerSave: PlayerSave = remote ?? createPlayerSave();
+      this.scene.start('CharSelectScene', { playerSave });
     });
 
     // FPS counter (dev mode)

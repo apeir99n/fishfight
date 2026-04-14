@@ -8,6 +8,7 @@ import {
 } from '../systems/LadderSystem';
 import { type PlayerSave } from '../systems/EconomySystem';
 import { getStoryState, shouldPufferfishJoin, shouldPufferfishDepart } from '../systems/StorySystem';
+import { persistSave } from '../utils/saveClient';
 
 export class LadderScene extends Phaser.Scene {
   private ladderState!: LadderState;
@@ -22,6 +23,7 @@ export class LadderScene extends Phaser.Scene {
     this.ladderState = data.ladderState || createLadderState();
     this.playerSave = data.playerSave;
     this.playerCharId = data.playerCharId;
+    persistSave(this.playerSave);
     this.cameras.main.setBackgroundColor('#0d2137');
 
     if (isLadderComplete(this.ladderState)) {

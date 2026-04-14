@@ -5,7 +5,8 @@ import {
   isCharacterUnlocked,
   type CharacterDef,
 } from '../config/characters.config';
-import { createPlayerSave, purchaseCharacter, type PlayerSave } from '../systems/EconomySystem';
+import { createPlayerSave, equipCharacter, purchaseCharacter, type PlayerSave } from '../systems/EconomySystem';
+import { persistSave } from '../utils/saveClient';
 import { personalityFromSlider } from '../systems/PersonalitySystem';
 
 export class CharSelectScene extends Phaser.Scene {
@@ -25,6 +26,7 @@ export class CharSelectScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0d2137');
     this.characters = getAllCharacters();
     this.playerSave = data?.playerSave || createPlayerSave();
+    persistSave(this.playerSave);
     const equippedIdx = this.characters.findIndex(c => c.id === this.playerSave.equippedCharacter);
     this.selectedIndex = equippedIdx >= 0 ? equippedIdx : 0;
     this.sprites = [];
@@ -168,6 +170,9 @@ export class CharSelectScene extends Phaser.Scene {
 
     if (!unlocked) return; // Locked by clears
 
+    // Record the chosen fish as equipped so rejoining restores it.
+    this.playerSave = equipCharacter(this.playerSave, char.id);
+    persistSave(this.playerSave);
     this.scene.start('LadderScene', {
       playerCharId: char.id,
       playerSave: this.playerSave,

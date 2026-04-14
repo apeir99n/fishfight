@@ -14,6 +14,7 @@ import {
   type PlayerSave,
 } from '../systems/EconomySystem';
 import { type LadderState } from '../systems/LadderSystem';
+import { persistSave } from '../utils/saveClient';
 
 type ShopTab = 'weapons' | 'skins' | 'fish';
 
@@ -33,6 +34,7 @@ export class ShopScene extends Phaser.Scene {
     this.ladderState = data.ladderState;
     this.playerCharId = data.playerCharId;
     this.activeTab = data.tab || 'weapons';
+    persistSave(this.playerSave);
     this.cameras.main.setBackgroundColor('#0d1a2d');
 
     // Title

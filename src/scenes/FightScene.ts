@@ -57,6 +57,7 @@ import {
   type LadderState,
 } from '../systems/LadderSystem';
 import { addCoins, getCoinBonus, recordArenaPlayed, recordBossDefeated, type PlayerSave } from '../systems/EconomySystem';
+import { persistSave } from '../utils/saveClient';
 import {
   createPetState,
   applySpeedBoost,
@@ -158,6 +159,7 @@ export class FightScene extends Phaser.Scene {
     this.matchOver = false;
     this.ladderState = data.ladderState || null;
     this.playerSave = data.playerSave || null;
+    if (this.playerSave) persistSave(this.playerSave);
     this.playerCharId = data.playerCharId || 'tuna';
 
     const playerCharId = this.playerCharId;
