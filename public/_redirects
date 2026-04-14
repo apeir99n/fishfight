@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA fallback: any unknown path serves index.html with a 200.
+# Harmless for a single-page Phaser game; lets deep links / refreshes work if
+# we ever add client-side routing.
+/*  /index.html  200
