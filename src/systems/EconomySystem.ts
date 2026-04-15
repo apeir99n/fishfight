@@ -13,6 +13,7 @@ export interface PlayerSave {
   equippedSkin: string | null;
   personality: number;  // 0=kind, 0.5=neutral, 1=bold
   totalSpent: number;
+  tutorialSeen: boolean;
   arenasPlayed: string[];
   bossesDefeated: string[];
 }
@@ -25,6 +26,7 @@ export function createPlayerSave(): PlayerSave {
     purchasedCharacters: [],
     equippedCharacter: 'tuna',
     totalSpent: 0,
+    tutorialSeen: false,
     ladderClears: 0,
     unlockedPets: [],
     equippedPet: null,
@@ -53,6 +55,11 @@ export function addCoins(save: PlayerSave, amount: number): PlayerSave {
 
 export function canAfford(save: PlayerSave, price: number): boolean {
   return save.coins >= price;
+}
+
+export function markTutorialSeen(save: PlayerSave): PlayerSave {
+  if (save.tutorialSeen) return save;
+  return { ...save, tutorialSeen: true };
 }
 
 export function getCoinBonus(save: PlayerSave): number {

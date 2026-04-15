@@ -6,7 +6,7 @@ import {
   isLadderComplete,
   type LadderState,
 } from '../systems/LadderSystem';
-import { type PlayerSave } from '../systems/EconomySystem';
+import { markTutorialSeen, type PlayerSave } from '../systems/EconomySystem';
 import { getStoryState, shouldPufferfishJoin, shouldPufferfishDepart } from '../systems/StorySystem';
 import { persistSave } from '../utils/saveClient';
 
@@ -82,20 +82,7 @@ export class LadderScene extends Phaser.Scene {
 
     fightBtn.on('pointerover', () => fightBtn.setColor('#ffcc00'));
     fightBtn.on('pointerout', () => fightBtn.setColor('#ff4444'));
-    fightBtn.on('pointerdown', () => {
-      this.scene.start('FightScene', {
-        playerCharId: this.playerCharId,
-        enemyCharId: fight.enemyCharId,
-        playerWeapon: this.playerSave.equippedWeapon,
-        enemyWeapon: fight.fightNumber > 5 ? 'pufferfish_cannon' : 'toy_fish',
-        aiLevel: fight.aiLevel,
-        arenaId: fight.arenaId,
-        ladderState: this.ladderState,
-        playerSave: this.playerSave,
-        enemyType: fight.enemyType,
-        enemyId: fight.enemyId,
-      });
-    });
+    fightBtn.on('pointerdown', () => this.startFight(fight));
 
     // Fish button
     const fishBtn = this.add.text(GAME_WIDTH - 20, GAME_HEIGHT - 80, '[ FISH ]', {
@@ -129,20 +116,86 @@ export class LadderScene extends Phaser.Scene {
     });
 
     // Keyboard shortcut
-    this.input.keyboard!.on('keydown-ENTER', () => {
-      this.scene.start('FightScene', {
-        playerCharId: this.playerCharId,
-        enemyCharId: fight.enemyCharId,
-        playerWeapon: this.playerSave.equippedWeapon,
-        enemyWeapon: fight.fightNumber > 5 ? 'pufferfish_cannon' : 'toy_fish',
-        aiLevel: fight.aiLevel,
-        arenaId: fight.arenaId,
-        ladderState: this.ladderState,
-        playerSave: this.playerSave,
-        enemyType: fight.enemyType,
-        enemyId: fight.enemyId,
+    this.input.keyboard!.on('keydown-ENTER', () => this.startFight(fight));
+  }
+
+  private startFight(fight: ReturnType<typeof getNextFight>): void {
+    if (!this.playerSave.tutorialSeen) {
+      this.showTutorial(() => {
+        this.playerSave = markTutorialSeen(this.playerSave);
+        persistSave(this.playerSave);
+        this.launchFight(fight);
       });
+      return;
+    }
+    this.launchFight(fight);
+  }
+
+  private launchFight(fight: ReturnType<typeof getNextFight>): void {
+    this.scene.start('FightScene', {
+      playerCharId: this.playerCharId,
+      enemyCharId: fight.enemyCharId,
+      playerWeapon: this.playerSave.equippedWeapon,
+      enemyWeapon: fight.fightNumber > 5 ? 'pufferfish_cannon' : 'toy_fish',
+      aiLevel: fight.aiLevel,
+      arenaId: fight.arenaId,
+      ladderState: this.ladderState,
+      playerSave: this.playerSave,
+      enemyType: fight.enemyType,
+      enemyId: fight.enemyId,
     });
+  }
+
+  private showTutorial(onClose: () => void): void {
+    // Dark backdrop
+    const backdrop = this.add.rectangle(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2,
+      GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.85,
+    ).setDepth(100).setInteractive();
+
+    // Panel
+    const panel = this.add.rectangle(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2,
+      GAME_WIDTH - 80, GAME_HEIGHT - 80,
+      0x0d2137, 1,
+    ).setStrokeStyle(2, 0xffcc00).setDepth(100);
+
+    const title = this.add.text(GAME_WIDTH / 2, 70, 'THE TIDE TURNS TODAY', {
+      fontSize: '22px', color: '#ffcc00', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(101);
+
+    const bodyText =
+      'A lone fish on dry land. An opponent hungry for battle.\n' +
+      'Only one will remain in the arena.\n\n' +
+      'J — Light punch    K — Heavy attack\n' +
+      'L — Special ability    F — Block incoming blows\n\n' +
+      'Knock your rival clean out of sight to win.\n' +
+      'They will fight back — move, dodge, and strike!\n\n' +
+      'Earn coins in every battle. Spend them on fish,\n' +
+      'weapons and skins. Some gear is free — just for you.';
+
+    const body = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 10, bodyText, {
+      fontSize: '13px', color: '#cfe8ff', align: 'center', lineSpacing: 4,
+    }).setOrigin(0.5).setDepth(101);
+
+    const startBtn = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 70, '[ LET\'S FIGHT ]', {
+      fontSize: '20px', color: '#ff4444', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(101).setInteractive({ useHandCursor: true });
+
+    startBtn.on('pointerover', () => startBtn.setColor('#ffcc00'));
+    startBtn.on('pointerout', () => startBtn.setColor('#ff4444'));
+    const close = (): void => {
+      backdrop.destroy();
+      panel.destroy();
+      title.destroy();
+      body.destroy();
+      startBtn.destroy();
+      onClose();
+    };
+    startBtn.on('pointerdown', close);
+    this.input.keyboard!.once('keydown-ENTER', close);
+    this.input.keyboard!.once('keydown-SPACE', close);
   }
 
   private showVictory(): void {
