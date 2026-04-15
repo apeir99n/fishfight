@@ -1,6 +1,6 @@
 import { PHYSICS } from '../config/game.config';
 
-const MOVE_SPEED = 200;
+const MOVE_SPEED = 100;
 const JUMP_VELOCITY = -400;
 const GRAVITY = PHYSICS.gravity;
 
