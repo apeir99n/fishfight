@@ -11,6 +11,8 @@ export interface CharacterDef {
   color: number;
   unlockCost?: number;   // coins to purchase (uncommon)
   unlockClear?: number;  // ladder clears needed (rare/legendary)
+  speedMultiplier?: number;      // movement speed multiplier (default 1)
+  knockbackMultiplier?: number;  // knockback dealt multiplier (default 1)
 }
 
 const CHARACTERS: CharacterDef[] = [
@@ -44,6 +46,8 @@ const CHARACTERS: CharacterDef[] = [
     frameCount: 5,
     color: 0xff3333,
     unlockCost: 0,
+    speedMultiplier: 0.5,
+    knockbackMultiplier: 0.2,
   },
   {
     id: 'pufferfish',
@@ -55,6 +59,8 @@ const CHARACTERS: CharacterDef[] = [
     frameCount: 6,
     color: 0x44884a,
     unlockCost: 0,
+    speedMultiplier: 0.5,
+    knockbackMultiplier: 0.2,
   },
   {
     id: 'sakabambaspis',

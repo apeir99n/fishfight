@@ -369,8 +369,8 @@ export class FightScene extends Phaser.Scene {
     const rightDown = this.cursors.right.isDown || this.keys.D.isDown;
     const jumpDown = this.cursors.up.isDown || this.keys.W.isDown;
 
-    if (leftDown) p.movement = moveLeft(p.movement);
-    else if (rightDown) p.movement = moveRight(p.movement);
+    if (leftDown) p.movement = moveLeft(p.movement, p.charDef.speedMultiplier ?? 1);
+    else if (rightDown) p.movement = moveRight(p.movement, p.charDef.speedMultiplier ?? 1);
     else p.movement = stopHorizontal(p.movement);
 
     if (jumpDown) p.movement = jump(p.movement);
@@ -403,8 +403,9 @@ export class FightScene extends Phaser.Scene {
           if (dist <= result.meleeHit.rangeX) {
             this.enemy.combat = applyDamage(this.enemy.combat, result.meleeHit.damage);
             const dir = p.movement.x < this.enemy.movement.x ? 1 : -1;
-            this.enemy.movement.velocityX = result.meleeHit.knockback * dir * 3;
-            this.enemy.movement.velocityY = -result.meleeHit.knockback * 0.5;
+            const kbMul = p.charDef.knockbackMultiplier ?? 1;
+            this.enemy.movement.velocityX = result.meleeHit.knockback * kbMul * dir * 3;
+            this.enemy.movement.velocityY = -result.meleeHit.knockback * kbMul * 0.5;
             this.enemy.movement.isOnGround = false;
             this.enemy.sprite.setTint(0xff0000);
             this.time.delayedCall(100, () => {
@@ -472,11 +473,13 @@ export class FightScene extends Phaser.Scene {
     switch (action) {
       case AIAction.MoveToward:
         e.movement = p.movement.x < e.movement.x
-          ? moveLeft(e.movement) : moveRight(e.movement);
+          ? moveLeft(e.movement, e.charDef.speedMultiplier ?? 1)
+          : moveRight(e.movement, e.charDef.speedMultiplier ?? 1);
         break;
       case AIAction.MoveAway:
         e.movement = p.movement.x < e.movement.x
-          ? moveRight(e.movement) : moveLeft(e.movement);
+          ? moveRight(e.movement, e.charDef.speedMultiplier ?? 1)
+          : moveLeft(e.movement, e.charDef.speedMultiplier ?? 1);
         break;
       case AIAction.Jump:
         e.movement = jump(e.movement);
@@ -496,8 +499,9 @@ export class FightScene extends Phaser.Scene {
           if (dist <= result.meleeHit.rangeX) {
             p.combat = applyDamage(p.combat, result.meleeHit.damage);
             const dir = e.movement.x < p.movement.x ? 1 : -1;
-            p.movement.velocityX = result.meleeHit.knockback * dir * 3;
-            p.movement.velocityY = -result.meleeHit.knockback * 0.5;
+            const kbMul = e.charDef.knockbackMultiplier ?? 1;
+            p.movement.velocityX = result.meleeHit.knockback * kbMul * dir * 3;
+            p.movement.velocityY = -result.meleeHit.knockback * kbMul * 0.5;
             p.movement.isOnGround = false;
             p.sprite.setTint(0xff0000);
             this.time.delayedCall(100, () => {
@@ -714,6 +718,7 @@ export class FightScene extends Phaser.Scene {
     defender.combat = applyDamage(defender.combat, damage);
 
     let kb = calculateKnockback(attacker.combat.currentAttack, defender.combat.hp, defender.combat.maxHp);
+    kb *= attacker.charDef.knockbackMultiplier ?? 1;
     // Xenomorph knockback bonus
     if (attacker === this.player && this.parasiteState.transformed) {
       kb *= this.parasiteState.knockbackMultiplier;

@@ -45,14 +45,14 @@ export function updateHitstun(state: FighterState, dt: number): FighterState {
   return { ...state, hitstunTimer: Math.max(0, state.hitstunTimer - dt) };
 }
 
-export function moveLeft(state: FighterState): FighterState {
+export function moveLeft(state: FighterState, speedMultiplier = 1): FighterState {
   if (isInHitstun(state)) return state;
-  return { ...state, velocityX: -MOVE_SPEED, facingRight: false };
+  return { ...state, velocityX: -MOVE_SPEED * speedMultiplier, facingRight: false };
 }
 
-export function moveRight(state: FighterState): FighterState {
+export function moveRight(state: FighterState, speedMultiplier = 1): FighterState {
   if (isInHitstun(state)) return state;
-  return { ...state, velocityX: MOVE_SPEED, facingRight: true };
+  return { ...state, velocityX: MOVE_SPEED * speedMultiplier, facingRight: true };
 }
 
 export function stopHorizontal(state: FighterState): FighterState {
