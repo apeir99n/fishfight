@@ -151,17 +151,17 @@ describe('CombatSystem', () => {
     });
   });
 
-  describe('applyDamage', () => {
-    it('reduces HP by damage amount', () => {
+  describe('applyDamage (HP logic removed)', () => {
+    it('is a no-op — HP stays full, match ends by KO only', () => {
       const state = createCombatState();
       const result = applyDamage(state, 20);
-      expect(result.hp).toBe(180); // 200 - 20
+      expect(result.hp).toBe(state.hp);
     });
 
-    it('HP does not go below zero', () => {
+    it('large damage values also leave HP unchanged', () => {
       const state = createCombatState();
-      const result = applyDamage(state, 999);
-      expect(result.hp).toBe(0);
+      const result = applyDamage(state, 9999);
+      expect(result.hp).toBe(state.hp);
     });
   });
 
@@ -232,42 +232,27 @@ describe('CombatSystem', () => {
     });
   });
 
-  describe('integration: combat flow', () => {
-    it('full attack-damage-knockback cycle', () => {
+  describe('integration: combat flow (no HP)', () => {
+    it('attack cycle still computes damage/knockback values but HP is untouched', () => {
       let attacker = createCombatState();
       let defender = createCombatState();
 
-      // Attacker starts light attack
       attacker = startAttack(attacker, AttackType.Light);
       expect(attacker.isAttacking).toBe(true);
 
-      // Attack hits — calculate damage and knockback
       const damage = calculateDamage(AttackType.Light, defender.isBlocking);
       defender = applyDamage(defender, damage);
-      expect(defender.hp).toBe(195); // 200 - 5
+      expect(defender.hp).toBe(defender.maxHp); // HP unchanged
 
       const kb = calculateKnockback(AttackType.Light, defender.hp, defender.maxHp);
-      expect(kb).toBeGreaterThan(50); // slightly more than base since HP < max
+      expect(kb).toBeGreaterThan(0);
     });
 
-    it('blocking reduces incoming damage', () => {
-      let defender = createCombatState();
-      defender = applyBlock(defender, true);
-
-      const damage = calculateDamage(AttackType.Heavy, defender.isBlocking);
-      defender = applyDamage(defender, damage);
-      expect(defender.hp).toBe(194.75); // 200 - 15*0.35
-    });
-
-    it('low HP fighter gets knocked out of arena', () => {
-      let defender = createCombatState();
-      // Take lots of damage
-      defender = applyDamage(defender, 190);
-      expect(defender.hp).toBe(10); // 200 - 190
-
-      // At 10 HP, knockback for heavy = 120 * (1 + (200-10)/200) = 120 * 1.95 ≈ 234
-      const kb = calculateKnockback(AttackType.Heavy, defender.hp, defender.maxHp);
-      expect(kb).toBeGreaterThan(200);
+    it('blocking reduces computed damage number even though HP is never applied', () => {
+      const defender = applyBlock(createCombatState(), true);
+      const blockedDamage = calculateDamage(AttackType.Heavy, defender.isBlocking);
+      const unblockedDamage = calculateDamage(AttackType.Heavy, false);
+      expect(blockedDamage).toBeLessThan(unblockedDamage);
     });
   });
 });

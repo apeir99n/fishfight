@@ -1462,27 +1462,5 @@ export class FightScene extends Phaser.Scene {
       }
     }
 
-    // HP bars
-    this.drawHPBar(20, 30, 200, 16, this.player.combat, this.player.charDef.color);
-    this.drawHPBar(GAME_WIDTH - 220, 30, 200, 16, this.enemy.combat, this.enemy.charDef.color);
-  }
-
-  private drawHPBar(
-    x: number, y: number,
-    width: number, height: number,
-    combat: CombatState,
-    color: number,
-  ): void {
-    const g = this.graphics;
-    g.fillStyle(0x333333, 1);
-    g.fillRect(x, y, width, height);
-
-    const hpRatio = combat.hp / combat.maxHp;
-    const hpColor = hpRatio > 0.5 ? color : hpRatio > 0.25 ? 0xffaa00 : 0xff2222;
-    g.fillStyle(hpColor, 1);
-    g.fillRect(x, y, width * hpRatio, height);
-
-    g.lineStyle(1, 0xffffff, 0.5);
-    g.strokeRect(x, y, width, height);
   }
 }

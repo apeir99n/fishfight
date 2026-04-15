@@ -93,8 +93,9 @@ export function calculateKnockback(attack: AttackType, currentHp: number, maxHp:
   return base * (1 + (maxHp - currentHp) / maxHp);
 }
 
-export function applyDamage(state: CombatState, damage: number): CombatState {
-  return { ...state, hp: Math.max(0, state.hp - damage) };
+export function applyDamage(state: CombatState, _damage: number): CombatState {
+  // HP logic removed — match is won only by knocking the opponent out of the arena.
+  return state;
 }
 
 export function checkKO(
