@@ -7,6 +7,9 @@ import {
   type LadderState,
 } from '../systems/LadderSystem';
 import { markTutorialSeen, type PlayerSave } from '../systems/EconomySystem';
+import { findCode } from '../config/codes.config';
+import { getCharacter } from '../config/characters.config';
+import { getSkin } from '../config/skins.config';
 import { getStoryState, shouldPufferfishJoin, shouldPufferfishDepart } from '../systems/StorySystem';
 import { persistSave } from '../utils/saveClient';
 
@@ -64,6 +67,14 @@ export class LadderScene extends Phaser.Scene {
         fontSize: '12px', color: '#446688',
       });
     }
+
+    // Code redemption button (top-right, same row as Fight 1)
+    const codeBtn = this.add.text(GAME_WIDTH - 20, 100, '[ CODE ]', {
+      fontSize: '16px', color: '#ff88cc',
+    }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
+    codeBtn.on('pointerover', () => codeBtn.setColor('#ffcc00'));
+    codeBtn.on('pointerout', () => codeBtn.setColor('#ff88cc'));
+    codeBtn.on('pointerdown', () => this.promptForCode());
 
     // Coins
     this.add.text(20, GAME_HEIGHT - 50, `Coins: ${this.playerSave.coins}`, {
@@ -144,6 +155,65 @@ export class LadderScene extends Phaser.Scene {
       enemyType: fight.enemyType,
       enemyId: fight.enemyId,
     });
+  }
+
+  private promptForCode(): void {
+    const raw = window.prompt('Enter a secret code:');
+    if (raw === null) return; // cancelled
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+
+    const match = findCode(trimmed);
+    if (!match) {
+      this.flashBanner('Invalid code', '#ff4444');
+      return;
+    }
+
+    if (match.reward.type === 'skin') {
+      const skin = getSkin(match.reward.id);
+      if (!skin) {
+        this.flashBanner('Reward missing', '#ff4444');
+        return;
+      }
+      if (this.playerSave.unlockedSkins.includes(match.reward.id)) {
+        this.flashBanner(`Already owned: ${skin.name}`, '#ffaa00');
+        return;
+      }
+      this.playerSave = {
+        ...this.playerSave,
+        unlockedSkins: [...this.playerSave.unlockedSkins, match.reward.id],
+      };
+      persistSave(this.playerSave);
+      this.flashBanner(match.description ?? `Unlocked skin: ${skin.name}`, '#44cc66');
+      return;
+    }
+
+    if (match.reward.type === 'character') {
+      const char = getCharacter(match.reward.id);
+      if (!char) {
+        this.flashBanner('Reward missing', '#ff4444');
+        return;
+      }
+      if (this.playerSave.purchasedCharacters.includes(match.reward.id)) {
+        this.flashBanner(`Already owned: ${char.name}`, '#ffaa00');
+        return;
+      }
+      this.playerSave = {
+        ...this.playerSave,
+        purchasedCharacters: [...this.playerSave.purchasedCharacters, match.reward.id],
+      };
+      persistSave(this.playerSave);
+      this.flashBanner(match.description ?? `Unlocked fish: ${char.name}`, '#44cc66');
+    }
+  }
+
+  private flashBanner(message: string, color: string): void {
+    const banner = this.add.text(GAME_WIDTH / 2, 70, message, {
+      fontSize: '14px', color, fontStyle: 'bold',
+      backgroundColor: '#000000',
+      padding: { x: 10, y: 6 },
+    }).setOrigin(0.5).setDepth(200);
+    this.time.delayedCall(2500, () => banner.destroy());
   }
 
   private showTutorial(onClose: () => void): void {
