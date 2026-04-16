@@ -18,6 +18,11 @@ const CODES: CodeDef[] = [
     reward: { type: 'character', id: 'secretfish' },
     description: 'Secret Fish unlocked!',
   },
+  {
+    code: 'OGFLAPPY',
+    reward: { type: 'character', id: 'flappyflounder' },
+    description: 'Flappy Flounder unlocked!',
+  },
 ];
 
 function normalize(raw: string): string {

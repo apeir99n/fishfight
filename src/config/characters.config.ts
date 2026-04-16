@@ -86,6 +86,18 @@ const CHARACTERS: CharacterDef[] = [
     unlockCost: 0,
     secret: true,
   },
+  {
+    id: 'flappyflounder',
+    name: 'Flappy Flounder',
+    rarity: 'legendary',
+    spriteSheet: 'flappyflounder_sheet',
+    frameWidth: 32,
+    frameHeight: 32,
+    frameCount: 6,
+    color: 0x8a5a3b,
+    unlockCost: 0,
+    secret: true,
+  },
 ];
 
 export function getCharacter(id: string): CharacterDef | undefined {
