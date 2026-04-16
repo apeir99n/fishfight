@@ -1,4 +1,4 @@
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'exclusive';
 
 export interface CharacterDef {
   id: string;
@@ -77,7 +77,7 @@ const CHARACTERS: CharacterDef[] = [
   {
     id: 'secretfish',
     name: 'Secret Fish',
-    rarity: 'legendary',
+    rarity: 'exclusive',
     spriteSheet: 'secretfish_sheet',
     frameWidth: 32,
     frameHeight: 32,
@@ -89,7 +89,7 @@ const CHARACTERS: CharacterDef[] = [
   {
     id: 'flappyflounder',
     name: 'Flappy Flounder',
-    rarity: 'legendary',
+    rarity: 'exclusive',
     spriteSheet: 'flappyflounder_sheet',
     frameWidth: 32,
     frameHeight: 32,

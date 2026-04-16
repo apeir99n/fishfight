@@ -268,7 +268,7 @@ export class ShopScene extends Phaser.Scene {
 
     // Rarity color
     const rarityColors: Record<string, string> = {
-      common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff',
+      common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff', exclusive: '#ff88cc',
     };
 
     this.addContent(this.add.text(50, y, char.name, {

@@ -68,7 +68,7 @@ export class CharSelectScene extends Phaser.Scene {
 
       // Name + rarity
       const rarityColors: Record<string, string> = {
-        common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff'
+        common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff', exclusive: '#ff88cc'
       };
       this.add.text(x, y + 50, char.name, {
         fontSize: '12px', color: rarityColors[char.rarity] || '#ffffff',
