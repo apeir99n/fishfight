@@ -45,7 +45,7 @@
     }
     .pad-left {
       grid-template-columns: repeat(3, 56px);
-      grid-template-rows: 56px;
+      grid-template-rows: repeat(2, 56px);
     }
     .pad-right {
       grid-template-columns: repeat(3, 56px);
@@ -79,8 +79,11 @@
   <div id="game-container"></div>
   <div id="touch-controls">
     <div class="pad pad-left">
-      <button class="tc-btn" data-key="ArrowLeft" data-code="ArrowLeft" data-kc="37" aria-label="Left">◀</button>
+      <span></span>
       <button class="tc-btn" data-key="ArrowUp" data-code="ArrowUp" data-kc="38" aria-label="Up">▲</button>
+      <span></span>
+      <button class="tc-btn" data-key="ArrowLeft" data-code="ArrowLeft" data-kc="37" aria-label="Left">◀</button>
+      <button class="tc-btn" data-key="ArrowDown" data-code="ArrowDown" data-kc="40" aria-label="Down">▼</button>
       <button class="tc-btn" data-key="ArrowRight" data-code="ArrowRight" data-kc="39" aria-label="Right">▶</button>
     </div>
     <div class="pad pad-right">

@@ -18,12 +18,23 @@ import { persistSave } from '../utils/saveClient';
 
 type ShopTab = 'weapons' | 'skins' | 'fish';
 
+// Scroll viewport (vertical band between tabs and back button / arrow buttons)
+const SCROLL_TOP = 95;
+const SCROLL_BOTTOM = GAME_HEIGHT - 55;
+const SCROLL_STEP = 50;
+
 export class ShopScene extends Phaser.Scene {
   private playerSave!: PlayerSave;
   private ladderState!: LadderState;
   private playerCharId!: string;
   private coinsText!: Phaser.GameObjects.Text;
   private activeTab: ShopTab = 'weapons';
+
+  private scrollContainer!: Phaser.GameObjects.Container;
+  private scrollY = 0;
+  private contentHeight = 0;
+  private upBtn!: Phaser.GameObjects.Text;
+  private downBtn!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'ShopScene' });
@@ -70,14 +81,46 @@ export class ShopScene extends Phaser.Scene {
     skinsTab.on('pointerdown', () => this.switchTab('skins'));
     fishTab.on('pointerdown', () => this.switchTab('fish'));
 
+    // Scroll container + mask for entries
+    this.scrollContainer = this.add.container(0, 0);
+    const maskShape = this.make.graphics();
+    maskShape.fillStyle(0xffffff);
+    maskShape.fillRect(0, SCROLL_TOP, GAME_WIDTH, SCROLL_BOTTOM - SCROLL_TOP);
+    this.scrollContainer.setMask(maskShape.createGeometryMask());
+
     // Content
+    let lastBottom = 110;
     if (this.activeTab === 'weapons') {
-      this.renderWeapons();
+      lastBottom = this.renderWeapons();
     } else if (this.activeTab === 'skins') {
-      this.renderSkins();
+      lastBottom = this.renderSkins();
     } else {
-      this.renderFish();
+      lastBottom = this.renderFish();
     }
+    this.contentHeight = lastBottom - SCROLL_TOP;
+    this.scrollY = 0;
+    this.scrollContainer.y = 0;
+
+    // Scroll buttons (on the right edge of scroll area)
+    this.upBtn = this.add.text(GAME_WIDTH - 20, SCROLL_TOP + 10, '▲', {
+      fontSize: '20px', color: '#88bbdd', fontStyle: 'bold',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    this.upBtn.on('pointerdown', () => this.scrollBy(-SCROLL_STEP));
+
+    this.downBtn = this.add.text(GAME_WIDTH - 20, SCROLL_BOTTOM - 30, '▼', {
+      fontSize: '20px', color: '#88bbdd', fontStyle: 'bold',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    this.downBtn.on('pointerdown', () => this.scrollBy(SCROLL_STEP));
+    this.updateScrollButtons();
+
+    // Keyboard and mouse-wheel scrolling
+    this.input.keyboard!.on('keydown-UP', () => this.scrollBy(-SCROLL_STEP));
+    this.input.keyboard!.on('keydown-DOWN', () => this.scrollBy(SCROLL_STEP));
+    this.input.keyboard!.on('keydown-PAGE_UP', () => this.scrollBy(-SCROLL_STEP * 3));
+    this.input.keyboard!.on('keydown-PAGE_DOWN', () => this.scrollBy(SCROLL_STEP * 3));
+    this.input.on('wheel', (_pointer: unknown, _go: unknown, _dx: number, dy: number) => {
+      this.scrollBy(dy * 0.5);
+    });
 
     // Back button
     const backBtn = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 30, '[ BACK TO LADDER ]', {
@@ -103,6 +146,26 @@ export class ShopScene extends Phaser.Scene {
     });
   }
 
+  private scrollBy(delta: number): void {
+    const visibleHeight = SCROLL_BOTTOM - SCROLL_TOP;
+    const maxScroll = Math.max(0, this.contentHeight - visibleHeight + 20);
+    this.scrollY = Math.max(0, Math.min(maxScroll, this.scrollY + delta));
+    this.scrollContainer.y = -this.scrollY;
+    this.updateScrollButtons();
+  }
+
+  private updateScrollButtons(): void {
+    const visibleHeight = SCROLL_BOTTOM - SCROLL_TOP;
+    const maxScroll = Math.max(0, this.contentHeight - visibleHeight + 20);
+    this.upBtn.setColor(this.scrollY > 0 ? '#88bbdd' : '#3a4a5a');
+    this.downBtn.setColor(this.scrollY < maxScroll ? '#88bbdd' : '#3a4a5a');
+  }
+
+  private addContent<T extends Phaser.GameObjects.GameObject>(obj: T): T {
+    this.scrollContainer.add(obj);
+    return obj;
+  }
+
   private switchTab(tab: ShopTab): void {
     this.scene.restart({
       playerSave: this.playerSave,
@@ -112,20 +175,24 @@ export class ShopScene extends Phaser.Scene {
     });
   }
 
-  private renderWeapons(): void {
+  private renderWeapons(): number {
     const weapons = getAllWeapons();
-    weapons.forEach((w, i) => {
-      const y = 110 + i * 75;
+    let y = 110;
+    weapons.forEach((w) => {
       this.createWeaponEntry(w, y);
+      y += 75;
     });
+    return y;
   }
 
-  private renderSkins(): void {
+  private renderSkins(): number {
     const skins = getAllSkins();
-    skins.forEach((s, i) => {
-      const y = 110 + i * 50;
+    let y = 110;
+    skins.forEach((s) => {
       this.createSkinEntry(s, y);
+      y += 50;
     });
+    return y;
   }
 
   private createWeaponEntry(weapon: WeaponDef, y: number): void {
@@ -133,25 +200,25 @@ export class ShopScene extends Phaser.Scene {
     const equipped = this.playerSave.equippedWeapon === weapon.id;
     const affordable = canAfford(this.playerSave, weapon.price);
 
-    this.add.text(40, y, weapon.name, {
+    this.addContent(this.add.text(40, y, weapon.name, {
       fontSize: '16px', color: '#ffffff', fontStyle: 'bold',
-    });
+    }));
 
     const statsText = weapon.type === 'melee'
       ? `Melee | ${weapon.damage} dmg | ${weapon.range}px range`
       : `Ranged | ${weapon.damage} dmg | ${weapon.projectileSpeed}px/s`;
-    this.add.text(40, y + 22, statsText, {
+    this.addContent(this.add.text(40, y + 22, statsText, {
       fontSize: '11px', color: '#88aacc',
-    });
+    }));
 
     if (equipped) {
-      this.add.text(GAME_WIDTH - 40, y + 10, 'EQUIPPED', {
+      this.addContent(this.add.text(GAME_WIDTH - 40, y + 10, 'EQUIPPED', {
         fontSize: '14px', color: '#44cc44',
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
     } else if (owned) {
-      const equipBtn = this.add.text(GAME_WIDTH - 40, y + 10, '[ EQUIP ]', {
+      const equipBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 10, '[ EQUIP ]', {
         fontSize: '14px', color: '#44aaff',
-      }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+      }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
 
       equipBtn.on('pointerdown', () => {
         this.playerSave = equipWeapon(this.playerSave, weapon.id);
@@ -159,9 +226,9 @@ export class ShopScene extends Phaser.Scene {
       });
     } else {
       const priceColor = affordable ? '#ffcc00' : '#664444';
-      const buyBtn = this.add.text(GAME_WIDTH - 40, y + 10, `[ BUY ${weapon.price} ]`, {
+      const buyBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 10, `[ BUY ${weapon.price} ]`, {
         fontSize: '14px', color: priceColor,
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
 
       if (affordable) {
         buyBtn.setInteractive({ useHandCursor: true });
@@ -173,16 +240,18 @@ export class ShopScene extends Phaser.Scene {
     }
   }
 
-  private renderFish(): void {
+  private renderFish(): number {
     const chars = getAllCharacters().filter(c => {
       // Hide secret characters until the player has unlocked them via code.
       if (!c.secret) return true;
       return this.playerSave.purchasedCharacters.includes(c.id);
     });
-    chars.forEach((c, i) => {
-      const y = 110 + i * 55;
+    let y = 110;
+    chars.forEach((c) => {
       this.createFishEntry(c, y);
+      y += 55;
     });
+    return y;
   }
 
   private createFishEntry(char: CharacterDef, y: number): void {
@@ -193,7 +262,7 @@ export class ShopScene extends Phaser.Scene {
     const affordable = canAfford(this.playerSave, price);
 
     // Color swatch
-    const g = this.add.graphics();
+    const g = this.addContent(this.add.graphics());
     g.fillStyle(char.color, 1);
     g.fillCircle(30, y + 12, 8);
 
@@ -202,22 +271,22 @@ export class ShopScene extends Phaser.Scene {
       common: '#aaaaaa', uncommon: '#44cc44', rare: '#4488ff', legendary: '#cc44ff',
     };
 
-    this.add.text(50, y, char.name, {
+    this.addContent(this.add.text(50, y, char.name, {
       fontSize: '14px', color: rarityColors[char.rarity] || '#ffffff', fontStyle: 'bold',
-    });
+    }));
 
-    this.add.text(50, y + 18, `${char.rarity.toUpperCase()}`, {
+    this.addContent(this.add.text(50, y + 18, `${char.rarity.toUpperCase()}`, {
       fontSize: '10px', color: '#667788',
-    });
+    }));
 
     if (equipped) {
-      this.add.text(GAME_WIDTH - 40, y + 8, 'EQUIPPED', {
+      this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, 'EQUIPPED', {
         fontSize: '13px', color: '#44cc44',
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
     } else if (owned) {
-      const equipBtn = this.add.text(GAME_WIDTH - 40, y + 8, '[ EQUIP ]', {
+      const equipBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, '[ EQUIP ]', {
         fontSize: '13px', color: '#44aaff',
-      }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+      }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
 
       equipBtn.on('pointerdown', () => {
         this.playerSave = equipCharacter(this.playerSave, char.id);
@@ -226,9 +295,9 @@ export class ShopScene extends Phaser.Scene {
       });
     } else {
       const priceColor = affordable ? '#ffcc00' : '#664444';
-      const buyBtn = this.add.text(GAME_WIDTH - 40, y + 8, `[ BUY ${price} ]`, {
+      const buyBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, `[ BUY ${price} ]`, {
         fontSize: '13px', color: priceColor,
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
 
       if (affordable) {
         buyBtn.setInteractive({ useHandCursor: true });
@@ -246,7 +315,7 @@ export class ShopScene extends Phaser.Scene {
     const affordable = canAfford(this.playerSave, skin.price);
 
     // Color preview swatch
-    const g = this.add.graphics();
+    const g = this.addContent(this.add.graphics());
     g.fillStyle(skin.color, 1);
     g.fillCircle(30, y + 12, 8);
 
@@ -254,22 +323,22 @@ export class ShopScene extends Phaser.Scene {
     const rarityColor = skin.rarity === 'legendary' ? '#cc44ff'
       : skin.rarity === 'rare' ? '#44aaff' : '#ffffff';
 
-    this.add.text(50, y, skin.name, {
+    this.addContent(this.add.text(50, y, skin.name, {
       fontSize: '14px', color: rarityColor, fontStyle: 'bold',
-    });
+    }));
 
-    this.add.text(50, y + 18, skin.description, {
+    this.addContent(this.add.text(50, y + 18, skin.description, {
       fontSize: '10px', color: '#667788',
-    });
+    }));
 
     if (equipped) {
-      this.add.text(GAME_WIDTH - 40, y + 8, 'EQUIPPED', {
+      this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, 'EQUIPPED', {
         fontSize: '13px', color: '#44cc44',
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
     } else if (owned) {
-      const equipBtn = this.add.text(GAME_WIDTH - 40, y + 8, '[ EQUIP ]', {
+      const equipBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, '[ EQUIP ]', {
         fontSize: '13px', color: '#44aaff',
-      }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+      }).setOrigin(1, 0).setInteractive({ useHandCursor: true }));
 
       equipBtn.on('pointerdown', () => {
         this.playerSave = equipSkin(this.playerSave, skin.id);
@@ -277,9 +346,9 @@ export class ShopScene extends Phaser.Scene {
       });
     } else {
       const priceColor = affordable ? '#ffcc00' : '#664444';
-      const buyBtn = this.add.text(GAME_WIDTH - 40, y + 8, `[ BUY ${skin.price} ]`, {
+      const buyBtn = this.addContent(this.add.text(GAME_WIDTH - 40, y + 8, `[ BUY ${skin.price} ]`, {
         fontSize: '13px', color: priceColor,
-      }).setOrigin(1, 0);
+      }).setOrigin(1, 0));
 
       if (affordable) {
         buyBtn.setInteractive({ useHandCursor: true });
