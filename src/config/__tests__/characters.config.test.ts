@@ -62,10 +62,16 @@ describe('Characters Config', () => {
       expect(saka!.unlockCost).toBe(0);
     });
 
-    it('all 5 characters have different colors', () => {
+    it('all characters have distinct colors', () => {
       const all = getAllCharacters();
       const colors = all.map(c => c.color);
-      expect(new Set(colors).size).toBe(5);
+      expect(new Set(colors).size).toBe(all.length);
+    });
+
+    it('secret fish is flagged as secret', () => {
+      const secret = getCharacter('secretfish');
+      expect(secret).toBeDefined();
+      expect(secret!.secret).toBe(true);
     });
 
     it('returns undefined for unknown character', () => {
@@ -74,8 +80,8 @@ describe('Characters Config', () => {
   });
 
   describe('getAllCharacters', () => {
-    it('returns exactly 5 characters', () => {
-      expect(getAllCharacters().length).toBe(5);
+    it('returns exactly 6 characters (incl. secret)', () => {
+      expect(getAllCharacters().length).toBe(6);
     });
   });
 
@@ -90,7 +96,7 @@ describe('Characters Config', () => {
   describe('getUnlockableCharacters', () => {
     it('returns non-common characters', () => {
       const unlockable = getUnlockableCharacters();
-      expect(unlockable.length).toBe(3);
+      expect(unlockable.length).toBe(4);
       expect(unlockable.every(c => c.rarity !== 'common')).toBe(true);
     });
   });

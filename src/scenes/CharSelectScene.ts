@@ -24,7 +24,9 @@ export class CharSelectScene extends Phaser.Scene {
 
   create(data?: { playerSave?: PlayerSave }): void {
     this.cameras.main.setBackgroundColor('#0d2137');
-    this.characters = getAllCharacters();
+    this.characters = getAllCharacters().filter(c =>
+      !c.secret || (data?.playerSave?.purchasedCharacters.includes(c.id) ?? false)
+    );
     this.playerSave = data?.playerSave || createPlayerSave();
     persistSave(this.playerSave);
     const equippedIdx = this.characters.findIndex(c => c.id === this.playerSave.equippedCharacter);

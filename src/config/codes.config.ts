@@ -13,8 +13,11 @@ export interface CodeDef {
 }
 
 const CODES: CodeDef[] = [
-  // Example entry — replace/extend with real codes when you have them:
-  // { code: 'FISHLORD', reward: { type: 'skin', id: 'parasite' }, description: 'Parasite skin unlocked!' },
+  {
+    code: 'FSHAMZN',
+    reward: { type: 'character', id: 'secretfish' },
+    description: 'Secret Fish unlocked!',
+  },
 ];
 
 function normalize(raw: string): string {

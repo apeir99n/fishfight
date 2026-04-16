@@ -174,7 +174,11 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private renderFish(): void {
-    const chars = getAllCharacters();
+    const chars = getAllCharacters().filter(c => {
+      // Hide secret characters until the player has unlocked them via code.
+      if (!c.secret) return true;
+      return this.playerSave.purchasedCharacters.includes(c.id);
+    });
     chars.forEach((c, i) => {
       const y = 110 + i * 55;
       this.createFishEntry(c, y);

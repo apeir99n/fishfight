@@ -13,6 +13,7 @@ export interface CharacterDef {
   unlockClear?: number;  // ladder clears needed (rare/legendary)
   speedMultiplier?: number;      // movement speed multiplier (default 1)
   knockbackMultiplier?: number;  // knockback dealt multiplier (default 1)
+  secret?: boolean;              // hidden from shop/character-select until unlocked via code
 }
 
 const CHARACTERS: CharacterDef[] = [
@@ -72,6 +73,18 @@ const CHARACTERS: CharacterDef[] = [
     frameCount: 6,
     color: 0xffdd00,
     unlockCost: 0,
+  },
+  {
+    id: 'secretfish',
+    name: 'Secret Fish',
+    rarity: 'legendary',
+    spriteSheet: 'secretfish_sheet',
+    frameWidth: 32,
+    frameHeight: 32,
+    frameCount: 6,
+    color: 0x44aa22,
+    unlockCost: 0,
+    secret: true,
   },
 ];
 
