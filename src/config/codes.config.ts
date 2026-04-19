@@ -23,6 +23,46 @@ const CODES: CodeDef[] = [
     reward: { type: 'character', id: 'flappyflounder' },
     description: 'Flappy Flounder unlocked!',
   },
+  {
+    code: 'POISON',
+    reward: { type: 'character', id: 'fugu' },
+    description: 'Fugu unlocked!',
+  },
+  {
+    code: 'BRAZIL',
+    reward: { type: 'character', id: 'piranagh' },
+    description: 'Piranagh unlocked!',
+  },
+  {
+    code: 'ADA',
+    reward: { type: 'character', id: 'apriamagold' },
+    description: 'Apriama Gold unlocked!',
+  },
+  {
+    code: 'TEMU',
+    reward: { type: 'character', id: 'sokeyesalmon' },
+    description: 'Sockeye Salmon unlocked!',
+  },
+  {
+    code: 'FOSIL',
+    reward: { type: 'character', id: 'pteraspis' },
+    description: 'Pteraspis unlocked!',
+  },
+  {
+    code: 'KUZEYS',
+    reward: { type: 'character', id: 'apriamagreen' },
+    description: 'Apriama Green unlocked!',
+  },
+  {
+    code: 'LARRY',
+    reward: { type: 'character', id: 'lobster' },
+    description: 'Lobster unlocked!',
+  },
+  {
+    code: 'ADMIN',
+    reward: { type: 'character', id: 'astraspis' },
+    description: 'Astraspis unlocked!',
+  },
 ];
 
 function normalize(raw: string): string {
