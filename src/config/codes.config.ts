@@ -64,7 +64,7 @@ const CODES: CodeDef[] = [
     description: 'Astraspis unlocked!',
   },
   {
-    code: 'FAT',
+    code: 'ZAID',
     reward: { type: 'character', id: 'zaidfish' },
     description: 'Zaid Fish unlocked!',
   },
