@@ -80,8 +80,8 @@ describe('Characters Config', () => {
   });
 
   describe('getAllCharacters', () => {
-    it('returns exactly 15 characters (incl. secrets)', () => {
-      expect(getAllCharacters().length).toBe(15);
+    it('returns exactly 19 characters (incl. secrets)', () => {
+      expect(getAllCharacters().length).toBe(19);
     });
   });
 
@@ -96,7 +96,7 @@ describe('Characters Config', () => {
   describe('getUnlockableCharacters', () => {
     it('returns non-common characters', () => {
       const unlockable = getUnlockableCharacters();
-      expect(unlockable.length).toBe(13);
+      expect(unlockable.length).toBe(17);
       expect(unlockable.every(c => c.rarity !== 'common')).toBe(true);
     });
   });

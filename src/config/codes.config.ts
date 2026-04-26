@@ -63,6 +63,26 @@ const CODES: CodeDef[] = [
     reward: { type: 'character', id: 'astraspis' },
     description: 'Astraspis unlocked!',
   },
+  {
+    code: 'FAT',
+    reward: { type: 'character', id: 'zaidfish' },
+    description: 'Zaid Fish unlocked!',
+  },
+  {
+    code: 'WILD',
+    reward: { type: 'character', id: 'goldfish' },
+    description: 'Goldfish unlocked!',
+  },
+  {
+    code: 'TESLA',
+    reward: { type: 'character', id: 'eel' },
+    description: 'Eel unlocked!',
+  },
+  {
+    code: 'SMALL',
+    reward: { type: 'character', id: 'guppy' },
+    description: 'Guppy unlocked!',
+  },
 ];
 
 function normalize(raw: string): string {
